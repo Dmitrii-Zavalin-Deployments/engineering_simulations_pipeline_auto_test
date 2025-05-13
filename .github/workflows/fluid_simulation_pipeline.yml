@@ -2,9 +2,9 @@ name: Fluid Data Processing and Commit
 
 on:
   push:
-    paths:
-      - "core/generate_blender_format.py"
-      - "testing-input-output/fluid_flow_parameters.json"
+    branches:
+      - "**"  # Triggers on any branch
+  workflow_dispatch:
 
 jobs:
   process_fluid_data:
@@ -34,10 +34,8 @@ jobs:
           git config --global user.name "${GIT_USER_NAME}"
           git config --global user.email "${GIT_USER_EMAIL}"
 
-          # Ensure we are in the correct repo directory
           cd $GITHUB_WORKSPACE
 
-          # Add Blender fluid parameters result file if it exists
           if ls testing-input-output/blender_fluid_parameters.json 1> /dev/null 2>&1; then
             git add testing-input-output/blender_fluid_parameters.json
             git status
