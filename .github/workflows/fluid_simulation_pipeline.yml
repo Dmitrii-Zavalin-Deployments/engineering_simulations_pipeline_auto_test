@@ -21,6 +21,13 @@ jobs:
       - name: Upgrade pip
         run: python -m pip install --upgrade pip
 
+      - name: Verify Script Exists
+        run: |
+          if [ ! -f core/generate_blender_format.py ]; then
+            echo "❌ Error: core/generate_blender_format.py not found!"
+            exit 1
+          fi
+
       - name: Run script to process fluid data
         run: python core/generate_blender_format.py
 
