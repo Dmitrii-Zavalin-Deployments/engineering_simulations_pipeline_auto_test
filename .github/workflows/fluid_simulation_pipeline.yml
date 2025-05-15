@@ -26,13 +26,13 @@ jobs:
 
       - name: Verify Script Exists
         run: |
-          if [ ! -f "$GITHUB_WORKSPACE/generate_blender_format.py" ]; then
-            echo "❌ Error: generate_blender_format.py not found!"
+          if [ ! -f "$GITHUB_WORKSPACE/src/generate_blender_format.py" ]; then
+            echo "❌ Error: generate_blender_format.py not found in src directory!"
             exit 1
           fi
 
       - name: Run script to process fluid data
-        run: python $GITHUB_WORKSPACE/generate_blender_format.py
+        run: python $GITHUB_WORKSPACE/src/generate_blender_format.py
 
       - name: Commit and Push Blender Fluid Parameters to Repository
         env:
@@ -44,8 +44,8 @@ jobs:
 
           cd $GITHUB_WORKSPACE
 
-          if ls testing-input-output/blender_fluid_parameters.json 1> /dev/null 2>&1; then
-            git add testing-input-output/blender_fluid_parameters.json
+          if ls data/testing-input-output/blender_fluid_parameters.json 1> /dev/null 2>&1; then
+            git add data/testing-input-output/blender_fluid_parameters.json
             git status
             
             if git diff --cached --quiet; then
