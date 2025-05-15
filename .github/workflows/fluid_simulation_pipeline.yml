@@ -26,13 +26,13 @@ jobs:
 
       - name: Verify Script Exists
         run: |
-          if [ ! -f "$GITHUB_WORKSPACE/core/generate_blender_format.py" ]; then
-            echo "❌ Error: generate_blender_format.py not found in expected location!"
+          if [ ! -f "$GITHUB_WORKSPACE/generate_blender_format.py" ]; then
+            echo "❌ Error: generate_blender_format.py not found!"
             exit 1
           fi
 
       - name: Run script to process fluid data
-        run: python $GITHUB_WORKSPACE/core/generate_blender_format.py
+        run: python $GITHUB_WORKSPACE/generate_blender_format.py
 
       - name: Commit and Push Blender Fluid Parameters to Repository
         env:
