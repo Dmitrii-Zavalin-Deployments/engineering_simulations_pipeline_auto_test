@@ -34,6 +34,22 @@ jobs:
       - name: Run script to process fluid data
         run: python $GITHUB_WORKSPACE/src/generate_blender_format.py
 
+      # ✅ Execute Unit & Integration Tests After Output File Generation
+      - name: Run unit tests  
+        run: pytest tests/test_input_validation.py --verbose  
+
+      - name: Run output validation tests  
+        run: pytest tests/test_output_validation.py --verbose
+
+      - name: Run integration tests  
+        run: pytest tests/test_conversion_pipeline.py --verbose
+
+      - name: Run Blender import tests  
+        run: pytest tests/test_blender_import_validation.py --verbose
+
+      - name: Run advanced Blender validation tests  
+        run: pytest tests/test_blender_advanced_validation.py --verbose
+
       - name: Commit and Push Blender Fluid Parameters to Repository
         env:
           GIT_USER_NAME: ${{ secrets.GIT_USER_NAME }}
