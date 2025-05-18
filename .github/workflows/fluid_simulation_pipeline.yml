@@ -25,9 +25,10 @@ jobs:
         run: |
           pip install -r requirements.txt
 
-      - name: Install OpenVDB (Includes pyopenvdb via Conda)
+      - name: Add Conda-forge Channel & Install OpenVDB
         run: |
-          conda install -c openvdb pyopenvdb
+          conda config --add channels conda-forge
+          conda install -c conda-forge pyopenvdb
 
       - name: Debug Repository Structure
         run: ls -R $GITHUB_WORKSPACE
