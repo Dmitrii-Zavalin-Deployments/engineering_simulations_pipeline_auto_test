@@ -29,13 +29,19 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y nvidia-cuda-toolkit gcc-11 g++-11
-          export CC=/usr/bin/gcc-11
-          export CXX=/usr/bin/g++-11
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 20
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 20
+          export CC=/usr/bin/gcc
+          export CXX=/usr/bin/g++
+          gcc --version
+          g++ --version
           nvcc --version  # Verify CUDA installation
 
-      - name: Set CUDA Path
+      - name: Set CUDA Path (Likely not needed with nvidia-cuda-toolkit)
         run: |
-          export CUDAToolkit_ROOT=/usr/local/cuda
+          echo "CUDA Toolkit should be automatically configured with nvidia-cuda-toolkit."
+          # You can remove the following line unless you have a specific reason
+          # export CUDAToolkit_ROOT=/usr/local/cuda
 
       - name: Install OpenVDB system dependencies
         run: |
@@ -56,22 +62,22 @@ jobs:
           fi
 
       - name: Run script to process fluid data
-        run: python $GITHUB_WORKSPACE/src/generate_blender_format.py
+        run: python "$GITHUB_WORKSPACE/src/generate_blender_format.py"
 
       # ✅ Execute Unit & Integration Tests After Output File Generation
-      - name: Run unit tests  
-        run: pytest tests/test_input_validation.py --verbose  
+      - name: Run unit tests
+        run: pytest tests/test_input_validation.py --verbose
 
-      - name: Run output validation tests  
+      - name: Run output validation tests
         run: pytest tests/test_output_validation.py --verbose
 
-      - name: Run integration tests  
+      - name: Run integration tests
         run: pytest tests/test_conversion_pipeline.py --verbose
 
-      - name: Run Blender import tests  
+      - name: Run Blender import tests
         run: pytest tests/test_blender_import_validation.py --verbose
 
-      - name: Run advanced Blender validation tests  
+      - name: Run advanced Blender validation tests
         run: pytest tests/test_blender_advanced_validation.py --verbose
 
       - name: Commit and Push Blender Fluid Parameters to Repository
@@ -82,17 +88,17 @@ jobs:
           git config --global user.name "${GIT_USER_NAME}"
           git config --global user.email "${GIT_USER_EMAIL}"
 
-          cd $GITHUB_WORKSPACE
+          cd "$GITHUB_WORKSPACE"
 
-          if ls data/testing-input-output/blender_fluid_parameters.json 1> /dev/null 2>&1; then
-            git add data/testing-input-output/blender_fluid_parameters.json
+          if [ -f "data/testing-input-output/blender_fluid_parameters.json" ]; then
+            git add "data/testing-input-output/blender_fluid_parameters.json"
             git status
-            
-            if git diff --cached --quiet; then
-              echo "✅ No changes to commit!"
-            else
+
+            if [[ $(git diff --cached --quiet; echo $?) -ne 0 ]]; then
               git commit -m "Auto-update: Added latest Blender fluid parameters"
               git push origin HEAD
+            else
+              echo "✅ No changes to commit!"
             fi
           else
             echo "❌ No Blender fluid parameters file detected, skipping commit."
