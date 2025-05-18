@@ -1,2 +1,1 @@
-numpy==1.23.5
-pyopenvdb
+numpy==1.23.5  # Compatible version for Python 3.9
