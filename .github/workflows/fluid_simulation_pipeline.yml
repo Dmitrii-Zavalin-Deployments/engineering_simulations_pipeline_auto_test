@@ -25,10 +25,10 @@ jobs:
         run: |
           pip install -r requirements.txt
 
-      - name: Install OpenVDB and its Python bindings
+      - name: Install OpenVDB system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libopenvdb-dev python3-openvdb
+          sudo apt-get install -y libopenvdb-dev
 
       - name: Debug Repository Structure
         run: ls -R $GITHUB_WORKSPACE
