@@ -33,15 +33,11 @@ jobs:
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 20
           export CC=/usr/bin/gcc
           export CXX=/usr/bin/g++
+          export CXXFLAGS="-mno-avx512f -mno-avx512bw -mno-avx512vl -mno-avx512dq"
+          export CFLAGS="-mno-avx512f -mno-avx512bw -mno-avx512vl -mno-avx512dq"
           gcc --version
           g++ --version
           nvcc --version  # Verify CUDA installation
-
-      - name: Set CUDA Path (Likely not needed with nvidia-cuda-toolkit)
-        run: |
-          echo "CUDA Toolkit should be automatically configured with nvidia-cuda-toolkit."
-          # You can remove the following line unless you have a specific reason
-          # export CUDAToolkit_ROOT=/usr/local/cuda
 
       - name: Install OpenVDB system dependencies
         run: |
