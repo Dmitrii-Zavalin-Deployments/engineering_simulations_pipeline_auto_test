@@ -31,13 +31,17 @@ jobs:
           sudo apt-get install -y nvidia-cuda-toolkit gcc-11 g++-11
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 20
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 20
-          export CC=/usr/bin/gcc
-          export CXX=/usr/bin/g++
-          export CXXFLAGS="-mno-avx512f -mno-avx512bw -mno-avx512vl -mno-avx512dq -mno-avx512fp16"
-          export CFLAGS="-mno-avx512f -mno-avx512bw -mno-avx512vl -mno-avx512dq -mno-avx512fp16"
+          export CC=/usr/bin/gcc-11
+          export CXX=/usr/bin/g++-11
+          export CXXFLAGS="-march=native -mno-avx512f -mno-avx512bw -mno-avx512vl -mno-avx512dq -mno-avx512fp16"
+          export CFLAGS="-march=native -mno-avx512f -mno-avx512bw -mno-avx512vl -mno-avx512dq -mno-avx512fp16"
           gcc --version
           g++ --version
           nvcc --version  # Verify CUDA installation
+
+      - name: Clean Previous Builds
+        run: |
+          rm -rf build/
 
       - name: Install OpenVDB system dependencies
         run: |
@@ -45,7 +49,7 @@ jobs:
 
       - name: Install OpenVDB Python bindings
         run: |
-          pip install git+https://github.com/AcademySoftwareFoundation/openvdb.git
+          pip install --no-cache-dir git+https://github.com/AcademySoftwareFoundation/openvdb.git
 
       - name: Debug Repository Structure
         run: ls -R $GITHUB_WORKSPACE
