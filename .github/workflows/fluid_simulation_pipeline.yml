@@ -33,8 +33,8 @@ jobs:
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 20
           export CC=/usr/bin/gcc
           export CXX=/usr/bin/g++
-          export CXXFLAGS="-mno-avx512f -mno-avx512bw -mno-avx512vl -mno-avx512dq"
-          export CFLAGS="-mno-avx512f -mno-avx512bw -mno-avx512vl -mno-avx512dq"
+          export CXXFLAGS="-mno-avx512f -mno-avx512bw -mno-avx512vl -mno-avx512dq -mno-avx512fp16"
+          export CFLAGS="-mno-avx512f -mno-avx512bw -mno-avx512vl -mno-avx512dq -mno-avx512fp16"
           gcc --version
           g++ --version
           nvcc --version  # Verify CUDA installation
