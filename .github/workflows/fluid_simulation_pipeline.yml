@@ -23,6 +23,8 @@ jobs:
 
       - name: Install base dependencies
         run: |
+          # Ensure pyopenvdb is NOT listed in requirements.txt
+          sed -i '/pyopenvdb/d' requirements.txt
           pip install -r requirements.txt
 
       - name: Install OpenVDB system dependencies
@@ -31,7 +33,7 @@ jobs:
           sudo apt-get install -y libopenvdb-dev
 
       - name: Debug Repository Structure
-        run: ls -R $GITHUB_WORKSPACE
+        run: ls -R "$GITHUB_WORKSPACE"
 
       - name: Verify Script Exists
         run: |
