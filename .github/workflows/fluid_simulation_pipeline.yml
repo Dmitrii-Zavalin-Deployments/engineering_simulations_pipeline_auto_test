@@ -21,13 +21,14 @@ jobs:
       - name: Upgrade pip
         run: python -m pip install --upgrade pip
 
-      - name: Install OpenVDB system dependencies
+      - name: Install system dependencies (Keep TBB if needed)
         run: |
           sudo apt-get update
-          sudo apt-get install -y libopenvdb-dev libtbb-dev  # Added TBB for compatibility
+          sudo apt-get install -y libtbb-dev
 
-      - name: Install base dependencies
+      - name: Install base dependencies (NumPy & HDF5 replace PyOpenVDB)
         run: |
+          pip install --upgrade numpy h5py scipy pytest
           pip install -r requirements.txt
 
       - name: Debug Repository Structure
@@ -35,15 +36,17 @@ jobs:
 
       - name: Verify Script Exists
         run: |
-          if [ ! -f "$GITHUB_WORKSPACE/src/generate_blender_format.py" ]; then
-            echo "❌ Error: generate_blender_format.py not found in src directory!"
+          if [ ! -f "$GITHUB_WORKSPACE/src/assemble_final_video.py" ]; then
+            echo "❌ Error: assemble_final_video.py not found in src directory!"
             exit 1
           fi
 
-      - name: Run script to process fluid data
-        run: python "$GITHUB_WORKSPACE/src/generate_blender_format.py"
+      - name: Run script to assemble final Blender-compatible video
+        env:
+          OUTPUT_FORMAT: blender_export  # Ensuring the script merges fluid data correctly
+        run: python "$GITHUB_WORKSPACE/src/assemble_final_video.py"
 
-      # ✅ Execute Unit & Integration Tests After Output File Generation
+      # ✅ Execute Unit & Integration Tests After Final Video Assembly
       - name: Run unit tests
         run: pytest tests/test_input_validation.py --verbose
 
@@ -59,7 +62,7 @@ jobs:
       - name: Run advanced Blender validation tests
         run: pytest tests/test_blender_advanced_validation.py --verbose
 
-      - name: Commit and Push Blender Fluid Parameters to Repository
+      - name: Commit and Push Final Blender Assembly Output to Repository
         env:
           GIT_USER_NAME: ${{ secrets.GIT_USER_NAME }}
           GIT_USER_EMAIL: ${{ secrets.GIT_USER_EMAIL }}
@@ -69,16 +72,16 @@ jobs:
 
           cd "$GITHUB_WORKSPACE"
 
-          if [ -f "data/testing-input-output/blender_fluid_parameters.json" ]; then
-            git add "data/testing-input-output/blender_fluid_parameters.json"
+          if [ -f "data/final_output/blender_video_export.blend" ]; then
+            git add "data/final_output/blender_video_export.blend"
             git status
 
             if [[ $(git diff --cached --quiet; echo $?) -ne 0 ]]; then
-              git commit -m "Auto-update: Added latest Blender fluid parameters"
+              git commit -m "Auto-update: Final Blender video assembly completed"
               git push origin HEAD
             else
               echo "✅ No changes to commit!"
             fi
           else
-            echo "❌ No Blender fluid parameters file detected, skipping commit."
+            echo "❌ No Blender video export file detected, skipping commit."
           fi
