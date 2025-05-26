@@ -2,7 +2,7 @@ import bpy
 import json
 import os
 import numpy as np # For numerical operations, especially with volume data
-from mathutils import Vector, Quaternion # For Blender's math types
+from mathutils import Vector, Quaternion, Matrix # Ensure Matrix is imported for clarity
 
 # --- CONFIGURATION ---
 # Determine the project root dynamically.
@@ -48,38 +48,22 @@ def load_json_data(filepath):
 
 def direction_to_rotation_quat(direction_vector):
     """Calculates a quaternion rotation to point an object (like a camera)
-    along a given direction vector, with Z-axis generally 'up'.
+    along a given direction vector.
+    
+    Cameras point along their local -Z axis in Blender.
+    This function creates a quaternion such that the object's local -Z axis
+    aligns with the given `direction_vector`, and its local Y axis
+    tries to align with the global Z axis (or global Y if Z is parallel).
     """
     if not isinstance(direction_vector, Vector):
         direction_vector = Vector(direction_vector)
     
-    loc_z = direction_vector.normalized()
-    
-    # Try to make Y axis point upwards (or as close as possible)
-    # Using Z-axis as reference for cross product
-    up_ref = Vector((0.0, 0.0, 1.0))
-    if loc_z.dot(up_ref) > 0.999: # Almost pointing straight up
-        up_ref = Vector((0.0, 1.0, 0.0)) # Use Y-axis as reference
-    elif loc_z.dot(up_ref) < -0.999: # Almost pointing straight down
-        up_ref = Vector((0.0, 1.0, 0.0)) # Use Y-axis as reference
-
-    loc_y = up_ref.cross(loc_z).normalized()
-    if loc_y.length == 0: # Happens if loc_z was parallel to up_ref, try another axis
-        loc_y = Vector((0.0, 1.0, 0.0)).cross(loc_z).normalized()
-        if loc_y.length == 0: # Still parallel, use default Y
-            loc_y = Vector((0.0, 1.0, 0.0))
-
-    loc_x = loc_y.cross(loc_z).normalized()
-
-    # Create a 3x3 rotation matrix from the orthonormal basis vectors
-    mat = (
-        Vector(loc_x),
-        Vector(loc_y),
-        Vector(loc_z)
-    ).to_matrix().transposed() # Transpose to get correct column vectors for rotation matrix
-
-    return mat.to_quaternion()
-
+    # Use Blender's built-in utility for robust "track to" quaternion calculation.
+    # The camera's default "forward" is -Z, and its "up" is Y.
+    # So we want its local -Z to track the `direction_vector`,
+    # and its local Y to align with the global up (Z).
+    quat = direction_vector.to_track_quat(track_axis='-Z', up_axis='Y')
+    return quat
 
 # --- MAIN SCENE ASSEMBLY FUNCTION ---
 def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_blend_file_path):
@@ -221,8 +205,6 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
         dx, dy, dz = grid_info['voxel_size']
         origin_x, origin_y, origin_z = grid_info['origin']
 
-        # --- FIX: Create the volume data block with ONLY the name argument ---
-        # As per Blender 3.x API, bpy.data.volumes.new() takes only one argument (name).
         volume_blender = bpy.data.volumes.new(volume_name)
         
         print(f"DEBUG: Type of volume_blender: {type(volume_blender)}")
@@ -232,11 +214,30 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
         bpy.context.collection.objects.link(volume_obj)
         print(f"Blender: Created initial volume object: {volume_obj.name}")
 
-        # --- REMOVED: No more explicit volume_blender.grids.new() calls here ---
-        # The grids will be implicitly created/accessed when you set their dimensions/data below.
-        print("Blender: Volume grids will be implicitly created/accessed on data block during frame updates.")
-        # We don't need a `volume_grids` dictionary to pre-store them anymore,
-        # as we'll just get them by name in the loop.
+        # --- FIX: Explicitly create all expected grids on the volume data block ONCE ---
+        # This is essential before trying to set their data.
+        print("Blender: Creating volume grids on data block using .new()...")
+        
+        # Dictionary to store grid references for later updates in the loop
+        volume_grids = {} 
+        
+        # Density Grid
+        # Type 'FLOAT' is correct for density and temperature
+        grid_density = volume_blender.grids.new(name="density", type='FLOAT')
+        volume_grids["density"] = grid_density
+        
+        # Temperature Grid
+        grid_temperature = volume_blender.grids.new(name="temperature", type='FLOAT')
+        volume_grids["temperature"] = grid_temperature
+        
+        # Velocity Grids (X, Y, Z components)
+        # Type 'FLOAT' for each component is correct
+        for comp_name_suffix in ['_X', '_Y', '_Z']:
+            grid_name = "velocity" + comp_name_suffix
+            grid_velocity_comp = volume_blender.grids.new(name=grid_name, type='FLOAT')
+            volume_grids[grid_name] = grid_velocity_comp
+        
+        print("✅ Blender: Volume grids explicitly created and assigned to volume_grids dictionary.")
 
         # Assign a principled volume material (this section is largely unchanged and correct)
         if "VolumeMaterial" not in bpy.data.materials:
@@ -286,35 +287,35 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             if density_output and density_input:
                 links.new(density_output, density_input)
             else:
-                print("❌ Error: One or both sockets are missing for Density link! (This should be resolved by grid creation)")
+                print("❌ Error: One or both sockets are missing for Density link!")
             
             temp_output = temp_attr.outputs.get('Value')
             temp_input = color_ramp_map_range.inputs.get('Value')
             if temp_output and temp_input:
                 links.new(temp_output, temp_input)
             else:
-                print("❌ Error: One or both sockets are missing for Temperature link! (This should be resolved by grid creation)")
+                print("❌ Error: One or both sockets are missing for Temperature link!")
             
             color_ramp_output = color_ramp_map_range.outputs.get('Result')
             color_ramp_input = color_ramp_colors.inputs.get('Fac')
             if color_ramp_output and color_ramp_input:
                 links.new(color_ramp_output, color_ramp_input)
             else:
-                print("❌ Error: One or both sockets are missing for Color Ramp (Map Range to ColorRamp) link! (This should be resolved by grid creation)")
+                print("❌ Error: One or both sockets are missing for Color Ramp (Map Range to ColorRamp) link!")
             
             color_output = color_ramp_colors.outputs.get('Color')
             color_input = principled_volume.inputs.get('Color')
             if color_output and color_input:
                 links.new(color_output, color_input)
             else:
-                print("❌ Error: One or both sockets are missing for Volume Color link! (This should be resolved by grid creation)")
+                print("❌ Error: One or both sockets are missing for Volume Color link!")
             
             volume_output = principled_volume.outputs.get('Volume')
             volume_input = material_output.inputs.get('Volume')
             if volume_output and volume_input:
                 links.new(volume_output, volume_input)
             else:
-                print("❌ Error: One or both sockets are missing for Volume Output link! (This should be resolved by grid creation)")
+                print("❌ Error: One or both sockets are missing for Volume Output link!")
 
         else:
             mat = bpy.data.materials["VolumeMaterial"]
@@ -339,18 +340,13 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             # --- Process Density Grid ---
             density_grid_name = "density"
             if 'density_data' in frame_data:
-                # Get the grid. Blender will create it implicitly if it doesn't exist yet
-                # when its dimensions and data are first set.
-                density_grid = volume_blender.grids.get(density_grid_name)
+                # Get the already-created grid from our dictionary
+                density_grid = volume_grids.get(density_grid_name)
                 
-                # If the grid is None here, it means Blender didn't create it implicitly
-                # which would indicate a deeper issue, but this is the primary path to try.
                 if density_grid is None:
-                    print(f"❌ Critical Error: Failed to obtain '{density_grid_name}' grid for frame {frame_idx}. "
-                          "Blender did not implicitly create it. Check your Blender version and API documentation.")
-                    continue # Skip this frame if grid can't be obtained
+                    print(f"❌ Critical Error: '{density_grid_name}' not found in volume_grids dictionary for frame {frame_idx}. This indicates an issue with initial grid creation.")
+                    continue 
 
-                # Set properties for the grid. This is what helps Blender initialize it.
                 density_grid.dimensions = (num_x, num_y, num_z)
                 density_grid.origin = (origin_x, origin_y, origin_z)
                 density_grid.spacing = (dx, dy, dz)
@@ -359,7 +355,6 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
                 if len(density_data) != num_x * num_y * num_z:
                     print(f"⚠️ Blender Warning: Density data size mismatch for frame {frame_idx}. Expected {num_x*num_y*num_z}, Got {len(density_data)}")
                 else:
-                    # Reshape and transpose to Blender's (Z,Y,X) order
                     density_data_reshaped_blender_order = density_data.reshape(num_x, num_y, num_z).transpose(2,1,0).flatten()
                     
                     if density_grid.points:
@@ -386,10 +381,9 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
                     
                     for comp_name_suffix, comp_data in velocity_components.items():
                         grid_name = "velocity" + comp_name_suffix
-                        comp_grid = volume_blender.grids.get(grid_name)
+                        comp_grid = volume_grids.get(grid_name) # Get from our pre-created dictionary
                         if comp_grid is None:
-                            print(f"❌ Critical Error: Failed to obtain '{grid_name}' grid for frame {frame_idx}. "
-                                  "Blender did not implicitly create it. Check your Blender version and API documentation.")
+                            print(f"❌ Critical Error: '{grid_name}' not found in volume_grids dictionary for frame {frame_idx}. This indicates an issue with initial grid creation.")
                             continue
 
                         comp_grid.dimensions = (num_x, num_y, num_z)
@@ -405,10 +399,9 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             # --- Process Temperature Grid ---
             temp_grid_name = "temperature"
             if 'temperature_data' in frame_data:
-                temp_grid = volume_blender.grids.get(temp_grid_name)
+                temp_grid = volume_grids.get(temp_grid_name) # Get from our pre-created dictionary
                 if temp_grid is None:
-                    print(f"❌ Critical Error: Failed to obtain '{temp_grid_name}' grid for frame {frame_idx}. "
-                          "Blender did not implicitly create it. Check your Blender version and API documentation.")
+                    print(f"❌ Critical Error: '{temp_grid_name}' not found in volume_grids dictionary for frame {frame_idx}. This indicates an issue with initial grid creation.")
                     continue
 
                 temp_grid.dimensions = (num_x, num_y, num_z)
@@ -474,7 +467,7 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
     direction_to_center = look_at_vec - cam_location_vec
     
     cam_obj.rotation_mode = 'QUATERNION'
-    cam_obj.rotation_quaternion = direction_to_rotation_quat(direction_to_center)
+    cam_obj.rotation_quaternion = direction_to_rotation_quat(direction_to_center) # Using the fixed function
     
     light_data = bpy.data.lights.new(name="SunLight", type='SUN')
     light_obj = bpy.data.objects.new(name="SunLight", object_data=light_data)
