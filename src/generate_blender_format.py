@@ -67,7 +67,7 @@ def direction_to_rotation_quat(direction_vector):
     if loc_y.length == 0: # Happens if loc_z was parallel to up_ref, try another axis
         loc_y = Vector((0.0, 1.0, 0.0)).cross(loc_z).normalized()
         if loc_y.length == 0: # Still parallel, use default Y
-             loc_y = Vector((0.0, 1.0, 0.0))
+            loc_y = Vector((0.0, 1.0, 0.0))
 
     loc_x = loc_y.cross(loc_z).normalized()
 
@@ -250,47 +250,29 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
         bpy.context.collection.objects.link(volume_obj)
         print(f"Blender: Created initial volume object: {volume_obj.name}")
 
-        # --- Pre-create all expected grids on the volume data block ---
+        # --- FIX: Correctly pre-create all expected grids on the volume data block ---
         # This ensures the Attribute Nodes in the material can find them by name and type.
-        # Use .add() on the grids collection, then set name and data_type.
-        print("Blender: Pre-creating volume grids on data block using .add()...")
+        # Use .new() on the grids collection to add new grids.
+        print("Blender: Creating volume grids on data block using .new()...")
         
         # Dictionary to store grid references for later updates
         volume_grids = {}
         
-        # Ensure the volume has at least one grid
-        if not volume_blender.grids:
-            print("❌ Error: No grids available in volume_blender!")
-        else:
-            # Access existing grids (assuming they are already present in the volume)
-            existing_grids = list(volume_blender.grids)  # Convert to a list for indexing
+        # Density Grid
+        grid_density = volume_blender.grids.new(name="density", type='FLOAT')
+        volume_grids["density"] = grid_density
         
-            # Density Grid
-            grid_density = existing_grids[0] if len(existing_grids) > 0 else None
-            if grid_density:
-                grid_density.name = "density"
-                grid_density.data_type = 'FLOAT'
-                volume_grids["density"] = grid_density
+        # Temperature Grid
+        grid_temperature = volume_blender.grids.new(name="temperature", type='FLOAT')
+        volume_grids["temperature"] = grid_temperature
         
-            # Temperature Grid
-            grid_temperature = existing_grids[1] if len(existing_grids) > 1 else None
-            if grid_temperature:
-                grid_temperature.name = "temperature"
-                grid_temperature.data_type = 'FLOAT'
-                volume_grids["temperature"] = grid_temperature
+        # Velocity Grids (X, Y, Z components)
+        for comp_name_suffix in ['_X', '_Y', '_Z']:
+            grid_name = "velocity" + comp_name_suffix
+            grid_velocity_comp = volume_blender.grids.new(name=grid_name, type='FLOAT')
+            volume_grids[grid_name] = grid_velocity_comp
         
-            # Velocity Grids
-            for i, comp_name_suffix in enumerate(['_X', '_Y', '_Z']):
-                grid_name = "velocity" + comp_name_suffix
-                if len(existing_grids) > (2 + i):  # Ensure index exists
-                    grid_velocity_comp = existing_grids[2 + i]
-                    grid_velocity_comp.name = grid_name
-                    grid_velocity_comp.data_type = 'FLOAT'  # Individual components are floats
-                    volume_grids[grid_name] = grid_velocity_comp
-                else:
-                    print(f"⚠️ Warning: Not enough grids for {grid_name}")
-        
-            print("✅ Blender: Volume grids assigned.")
+        print("✅ Blender: Volume grids created and assigned to volume_grids dictionary.")
 
         # Assign a principled volume material
         if "VolumeMaterial" not in bpy.data.materials:
@@ -352,7 +334,7 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             if density_output and density_input:
                 links.new(density_output, density_input)
             else:
-                print("❌ Error: One or both sockets are missing for Density link!")
+                print("❌ Error: One or both sockets are missing for Density link! (This should be resolved by grid creation)")
             
             # Repeat for other links
             temp_output = temp_attr.outputs.get('Value')
@@ -361,15 +343,15 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             if temp_output and temp_input:
                 links.new(temp_output, temp_input)
             else:
-                print("❌ Error: One or both sockets are missing for Temperature link!")
+                print("❌ Error: One or both sockets are missing for Temperature link! (This should be resolved by grid creation)")
             
-            color_ramp_output = color_ramp_map_range.outputs.get('Color')
+            color_ramp_output = color_ramp_map_range.outputs.get('Result') # Map Range output is 'Result'
             color_ramp_input = color_ramp_colors.inputs.get('Fac')
             
             if color_ramp_output and color_ramp_input:
                 links.new(color_ramp_output, color_ramp_input)
             else:
-                print("❌ Error: One or both sockets are missing for Color Ramp link!")
+                print("❌ Error: One or both sockets are missing for Color Ramp (Map Range to ColorRamp) link! (This should be resolved by grid creation)")
             
             color_output = color_ramp_colors.outputs.get('Color')
             color_input = principled_volume.inputs.get('Color')
@@ -377,7 +359,7 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             if color_output and color_input:
                 links.new(color_output, color_input)
             else:
-                print("❌ Error: One or both sockets are missing for Volume Color link!")
+                print("❌ Error: One or both sockets are missing for Volume Color link! (This should be resolved by grid creation)")
             
             volume_output = principled_volume.outputs.get('Volume')
             volume_input = material_output.inputs.get('Volume')
@@ -385,7 +367,7 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             if volume_output and volume_input:
                 links.new(volume_output, volume_input)
             else:
-                print("❌ Error: One or both sockets are missing for Volume Output link!")
+                print("❌ Error: One or both sockets are missing for Volume Output link! (This should be resolved by grid creation)")
 
         else:
             mat = bpy.data.materials["VolumeMaterial"]
@@ -434,9 +416,9 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
                             density_grid.points.foreach_set('value', density_data_reshaped_blender_order)
                             density_grid.keyframe_insert(data_path='points', frame=frame_idx)
                         else:
-                            print(f"❌ Error: Density grid points collection is missing or uninitialized!")
+                            print(f"❌ Error: Density grid points collection is missing or uninitialized for frame {frame_idx}!")
                 else:
-                    print(f"❌ Error: '{density_grid_name}' not found in volume_grids!")
+                    print(f"❌ Error: '{density_grid_name}' not found in volume_grids (This indicates an issue with initial grid creation)!")
             
             # --- Process Velocity Grids (X, Y, Z components) ---
             if 'velocity_data' in frame_data:
@@ -470,9 +452,9 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
                                 comp_grid.points.foreach_set('value', comp_data)
                                 comp_grid.keyframe_insert(data_path='points', frame=frame_idx)
                             else:
-                                print(f"❌ Error: {grid_name} grid points collection is missing or uninitialized!")
+                                print(f"❌ Error: {grid_name} grid points collection is missing or uninitialized for frame {frame_idx}!")
                         else:
-                            print(f"❌ Error: '{grid_name}' not found in volume_grids!")
+                            print(f"❌ Error: '{grid_name}' not found in volume_grids (This indicates an issue with initial grid creation)!")
             
             # --- Process Temperature Grid ---
             temp_grid_name = "temperature"  # This name must match the Attribute Node in the material!
@@ -494,9 +476,9 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
                             temp_grid.points.foreach_set('value', temperature_data_reshaped_blender_order)
                             temp_grid.keyframe_insert(data_path='points', frame=frame_idx)
                         else:
-                            print(f"❌ Error: Temperature grid points collection is missing or uninitialized!")
+                            print(f"❌ Error: Temperature grid points collection is missing or uninitialized for frame {frame_idx}!")
                 else:
-                    print(f"❌ Error: '{temp_grid_name}' not found in volume_grids!")
+                    print(f"❌ Error: '{temp_grid_name}' not found in volume_grids (This indicates an issue with initial grid creation)!")
 
     else:
         print("Blender: No volume data found or 'time_steps' is empty, skipping volume creation.")
