@@ -254,7 +254,7 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
         # This ensures the Attribute Nodes in the material can find them by name and type.
         # Use .add() on the grids collection, then set name and data_type.
         print("Blender: Pre-creating volume grids on data block using .add()...")
-'''        
+        
         # Dictionary to store grid references for later updates
         volume_grids = {}
 
@@ -339,7 +339,7 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             volume_obj.data.materials[0] = mat
         else:
             volume_obj.data.materials.append(mat)
-'''        
+        
         # Set volume object scale and location based on grid info
         # Blender's volume object has its origin at its center by default.
         # So, location should be grid_origin + 0.5 * grid_size
