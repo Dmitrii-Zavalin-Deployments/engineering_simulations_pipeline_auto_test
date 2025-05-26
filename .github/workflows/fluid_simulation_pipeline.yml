@@ -21,7 +21,7 @@ jobs:
         id: setup-blender # Assigns an ID to this step so we can reference its outputs
         run: |
           # Define the Blender version you want to use (3.6.10 is a stable LTS version)
-          BLENDER_VERSION="3.6.10"
+          BLENDER_VERSION="4.2.10"
           BLENDER_FILE="blender-${BLENDER_VERSION}-linux-x64.tar.xz"
           BLENDER_URL="https://download.blender.org/release/Blender${BLENDER_VERSION%.*}/${BLENDER_FILE}"
           
