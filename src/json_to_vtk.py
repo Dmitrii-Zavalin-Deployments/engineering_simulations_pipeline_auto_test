@@ -143,17 +143,15 @@ def convert_json_to_vtk(mesh_json_path, volume_json_path, output_vtk_dir, output
             print(f"Error: Missing required grid_info keys ({required_grid_keys}) in volume data. Cannot create volume objects.")
             return
 
-        num_z, num_y, num_x = grid_info['dimensions'] # Note: Your mesh script uses Z, Y, X order for dimensions
+        # Note: Your mesh script uses Z, Y, X order for dimensions from grid_info
+        # pyvista.ImageData expects dimensions (nx, ny, nz) as (X, Y, Z)
+        num_z, num_y, num_x = grid_info['dimensions'] 
         dx, dy, dz = grid_info['voxel_size']
         origin_x, origin_y, origin_z = grid_info['origin']
 
-        # Ensure that your `fluid_volume_data.json` provides data in (X, Y, Z) order.
-        # If it's (Z, Y, X) or another order, you'll need to adjust the `transpose` here.
-        # VTK/ParaView typically expects (X, Y, Z) with X being the fastest changing index.
-
-        # Create a base UniformGrid for the volume
-        # pyvista.UniformGrid expects dims as (nx, ny, nz)
-        base_grid = pv.UniformGrid(
+        # Create a base UniformGrid (ImageData) for the volume
+        # pyvista.ImageData is an alias for UniformGrid and is commonly used for rectilinear, uniformly spaced data.
+        base_grid = pv.ImageData(
             dims=(num_x, num_y, num_z), # Adjusted to (X, Y, Z) for pyvista dims
             spacing=(dx, dy, dz),
             origin=(origin_x, origin_y, origin_z)
@@ -168,11 +166,9 @@ def convert_json_to_vtk(mesh_json_path, volume_json_path, output_vtk_dir, output
             current_grid = base_grid.copy()
 
             # Add Point Data
-            # Note: For UniformGrid, pyvista expects data flattened in C-order (row-major),
+            # For UniformGrid (ImageData), pyvista expects data flattened in C-order (row-major),
             # which usually corresponds to (Z, Y, X) order if you flatten a 3D array directly.
-            # Your generate script provides dimensions as [Z, Y, X] and data is flattened.
-            # So, the size check needs to be num_x * num_y * num_z.
-
+            # Your generate script provides dimensions as [Z, Y, X] and data is flattened accordingly.
             expected_data_size = num_x * num_y * num_z
 
             if 'density_data' in frame_data:
@@ -197,8 +193,7 @@ def convert_json_to_vtk(mesh_json_path, volume_json_path, output_vtk_dir, output
                 else:
                     print(f"Warning: Velocity data shape mismatch for frame {frame_idx}. Expected ({expected_data_size}, 3), got {velocity_data.shape}. Skipping Velocity.")
 
-            # Save as .vti (for image data/uniform grids) or .vtu (for unstructured grids)
-            # .vti is preferred for UniformGrid
+            # Save as .vti (for image data/uniform grids)
             vtk_filepath = os.path.join(output_vtk_dir, f'fluid_data_t{frame_idx:04d}.vti')
             current_grid.save(vtk_filepath)
             vtu_files.append(vtk_filepath)
