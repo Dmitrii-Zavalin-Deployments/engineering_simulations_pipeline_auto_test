@@ -14,13 +14,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3 # Clones your repository into the runner
 
-      # --- Blender 4 Setup ---
-      - name: Download and Extract Blender 4
+      # --- Blender 4.2.10 Setup ---
+      - name: Download and Extract Blender 4.2.10
         id: setup-blender
         run: |
-          BLENDER_VERSION="4.0.2"
+          BLENDER_VERSION="4.2.10"
           BLENDER_FILE="blender-${BLENDER_VERSION}-linux-x64.tar.xz"
-          BLENDER_URL="https://download.blender.org/release/Blender${BLENDER_VERSION%.*}/${BLENDER_FILE}"
+          BLENDER_URL="https://www.blender.org/download/release/Blender4.2/${BLENDER_FILE}"
           
           echo "Downloading Blender from: ${BLENDER_URL}"
           wget -q ${BLENDER_URL} 
@@ -97,7 +97,7 @@ jobs:
             git add "${OUTPUT_BLEND_FILE}"
             git status
             if [[ $(git diff --cached --quiet; echo $?) -ne 0 ]]; then
-              git commit -m "Auto-update: Final Blender 4 scene assembly completed"
+              git commit -m "Auto-update: Final Blender 4.2.10 scene assembly completed"
               git push origin HEAD
             else
               echo "✅ No changes to commit!"
