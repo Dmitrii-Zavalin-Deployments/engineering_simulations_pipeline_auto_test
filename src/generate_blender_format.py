@@ -252,31 +252,31 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
 
         # --- Pre-create all expected grids on the volume data block ---
         # This ensures the Attribute Nodes in the material can find them by name and type.
-        # This uses volume_blender.grids.new(), then setting grid.name and grid.data_type.
-        print("Blender: Pre-creating volume grids on data block using new()...")
+        # Use .add() on the grids collection, then set name and data_type.
+        print("Blender: Pre-creating volume grids on data block using .add()...")
         
         # Dictionary to store grid references for later updates
         volume_grids = {}
 
         # Density Grid
-        grid = volume_blender.grids.new()
-        grid.name = "density"
-        grid.data_type = 'FLOAT'
-        volume_grids["density"] = grid
+        grid_density = volume_blender.grids.add() # Use .add()
+        grid_density.name = "density"
+        grid_density.data_type = 'FLOAT'
+        volume_grids["density"] = grid_density
 
         # Temperature Grid
-        grid = volume_blender.grids.new()
-        grid.name = "temperature"
-        grid.data_type = 'FLOAT'
-        volume_grids["temperature"] = grid
+        grid_temperature = volume_blender.grids.add() # Use .add()
+        grid_temperature.name = "temperature"
+        grid_temperature.data_type = 'FLOAT'
+        volume_grids["temperature"] = grid_temperature
 
         # Velocity Grids
         for comp_name_suffix in ['_X', '_Y', '_Z']:
             grid_name = "velocity" + comp_name_suffix
-            grid = volume_blender.grids.new()
-            grid.name = grid_name
-            grid.data_type = 'FLOAT' # Individual components are floats
-            volume_grids[grid_name] = grid
+            grid_velocity_comp = volume_blender.grids.add() # Use .add()
+            grid_velocity_comp.name = grid_name
+            grid_velocity_comp.data_type = 'FLOAT' # Individual components are floats
+            volume_grids[grid_name] = grid_velocity_comp
         
         print("Blender: Volume grids pre-created.")
 
