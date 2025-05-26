@@ -257,28 +257,40 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
         
         # Dictionary to store grid references for later updates
         volume_grids = {}
-
-        # Density Grid
-        grid_density = volume_blender.grids.add() # Use .add()
-        grid_density.name = "density"
-        grid_density.data_type = 'FLOAT'
-        volume_grids["density"] = grid_density
-
-        # Temperature Grid
-        grid_temperature = volume_blender.grids.add() # Use .add()
-        grid_temperature.name = "temperature"
-        grid_temperature.data_type = 'FLOAT'
-        volume_grids["temperature"] = grid_temperature
-
-        # Velocity Grids
-        for comp_name_suffix in ['_X', '_Y', '_Z']:
-            grid_name = "velocity" + comp_name_suffix
-            grid_velocity_comp = volume_blender.grids.add() # Use .add()
-            grid_velocity_comp.name = grid_name
-            grid_velocity_comp.data_type = 'FLOAT' # Individual components are floats
-            volume_grids[grid_name] = grid_velocity_comp
         
-        print("Blender: Volume grids pre-created.")
+        # Ensure the volume has at least one grid
+        if not volume_blender.grids:
+            print("❌ Error: No grids available in volume_blender!")
+        else:
+            # Access existing grids (assuming they are already present in the volume)
+            existing_grids = list(volume_blender.grids)  # Convert to a list for indexing
+        
+            # Density Grid
+            grid_density = existing_grids[0] if len(existing_grids) > 0 else None
+            if grid_density:
+                grid_density.name = "density"
+                grid_density.data_type = 'FLOAT'
+                volume_grids["density"] = grid_density
+        
+            # Temperature Grid
+            grid_temperature = existing_grids[1] if len(existing_grids) > 1 else None
+            if grid_temperature:
+                grid_temperature.name = "temperature"
+                grid_temperature.data_type = 'FLOAT'
+                volume_grids["temperature"] = grid_temperature
+        
+            # Velocity Grids
+            for i, comp_name_suffix in enumerate(['_X', '_Y', '_Z']):
+                grid_name = "velocity" + comp_name_suffix
+                if len(existing_grids) > (2 + i):  # Ensure index exists
+                    grid_velocity_comp = existing_grids[2 + i]
+                    grid_velocity_comp.name = grid_name
+                    grid_velocity_comp.data_type = 'FLOAT'  # Individual components are floats
+                    volume_grids[grid_name] = grid_velocity_comp
+                else:
+                    print(f"⚠️ Warning: Not enough grids for {grid_name}")
+        
+            print("✅ Blender: Volume grids assigned.")
 
         # Assign a principled volume material
         if "VolumeMaterial" not in bpy.data.materials:
