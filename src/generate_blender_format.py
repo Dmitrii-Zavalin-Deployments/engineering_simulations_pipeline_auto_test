@@ -214,7 +214,7 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
     else:
         print("Blender: No mesh data found or 'time_steps' is empty, skipping mesh creation.")
 
-
+'''
     # --- 5. Process Fluid Volume Data ---
     print("Blender: Processing fluid volume data...")
     if volume_data and 'time_steps' in volume_data and volume_data['time_steps']:
@@ -433,7 +433,7 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
     else:
         print("Blender: No volume data found or 'time_steps' is empty, skipping volume creation.")
 
-
+'''
     # --- 6. (Optional) Setup Camera and Lighting ---
     print("Blender: Setting up camera and lighting...")
     
