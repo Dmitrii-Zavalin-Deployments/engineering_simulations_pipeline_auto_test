@@ -236,14 +236,16 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
         dx, dy, dz = grid_info['voxel_size']
         origin_x, origin_y, origin_z = grid_info['origin']
 
-        # --- FIX: Create the volume data block with the explicit 'type' argument ---
-        volume_blender = bpy.data.volumes.new(volume_name, type='VOLUME')
+        # --- FIX: Create the volume data block with ONLY the name argument ---
+        # As per Blender 3.x API, bpy.data.volumes.new() takes only one argument (name).
+        volume_blender = bpy.data.volumes.new(volume_name)
         volume_obj = bpy.data.objects.new(volume_name, volume_blender)
         bpy.context.collection.objects.link(volume_obj)
         print(f"Blender: Created initial volume object: {volume_obj.name}")
 
         # --- Pre-create all expected grids on the volume data block ---
         # This ensures the Attribute Nodes in the material can find them by name and type.
+        # This uses new_grid(), which IS the correct method on the grids collection.
         print("Blender: Pre-creating volume grids on data block using new_grid()...")
         volume_blender.grids.new_grid(name="density", type='FLOAT')
         volume_blender.grids.new_grid(name="temperature", type='FLOAT')
