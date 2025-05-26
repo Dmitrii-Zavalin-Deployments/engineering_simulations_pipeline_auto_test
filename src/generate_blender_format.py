@@ -155,7 +155,7 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             print("Blender Error: 'static_faces' key not found in fluid_mesh_data.json. Cannot create mesh object.")
             # For a mesh, faces are essential, so we'll return if they are missing.
             return 
-            
+        
         # Create initial mesh object using the first frame's vertices and static faces
         first_frame_mesh = mesh_data['time_steps'][0]
         
@@ -190,7 +190,7 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             mesh_obj.data.materials[0] = mat
         else:
             mesh_obj.data.materials.append(mat)
-            
+        
         print(f"Blender: Created initial mesh object: {mesh_obj.name}")
 
         # Animate mesh by updating geometry per frame
@@ -320,7 +320,7 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             volume_obj.data.materials[0] = mat
         else:
             volume_obj.data.materials.append(mat)
-            
+        
         # Set volume object scale and location based on grid info
         # Blender's volume object has its origin at its center by default.
         # So, location should be grid_origin + 0.5 * grid_size
@@ -446,19 +446,19 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             center_x, center_y, center_z = np.mean(mesh_verts, axis=0)
             # Use bounding box diagonal for size estimate
             grid_size_magnitude = np.linalg.norm(np.max(mesh_verts, axis=0) - np.min(mesh_verts, axis=0))
-        
+    
     # Simple camera setup
     cam_data = bpy.data.cameras.new("Camera")
     cam_obj = bpy.data.objects.new("Camera", cam_data)
     bpy.context.collection.objects.link(cam_obj)
     bpy.context.scene.camera = cam_obj
-        
+    
     # Position camera to view the scene (adjust multipliers for desired zoom/angle)
     view_distance = grid_size_magnitude * 2.0 # Adjust multiplier for desired zoom level
     cam_obj.location = (center_x + view_distance * 0.8, # Move along X
                         center_y - view_distance * 1.2, # Pull back along Y (Blender's default front view)
                         center_z + view_distance * 0.75) # Move up along Z
-        
+    
     # Point camera towards the center of the grid
     look_at_vec = Vector((center_x, center_y, center_z))
     cam_location_vec = Vector(cam_obj.location)
