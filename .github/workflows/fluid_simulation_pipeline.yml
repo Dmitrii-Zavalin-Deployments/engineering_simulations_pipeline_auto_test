@@ -14,94 +14,153 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3 # Clones your repository into the runner
 
-      # --- Blender 4.2.10 Setup ---
-      - name: Download and Extract Blender 4.2.10
-        id: setup-blender
+      # --- Blender Setup ---
+      # This is crucial! We need to download and extract a portable Blender version
+      # because your Python script uses 'bpy' and requires a full Blender environment.
+      - name: Download and Extract Blender
+        id: setup-blender # Assigns an ID to this step so we can reference its outputs
         run: |
-          BLENDER_VERSION="4.2.10"
+          # Define the Blender version you want to use (3.6.10 is a stable LTS version)
+          BLENDER_VERSION="3.6.10"
           BLENDER_FILE="blender-${BLENDER_VERSION}-linux-x64.tar.xz"
-          BLENDER_URL="https://www.blender.org/download/release/Blender4.2/${BLENDER_FILE}"
+          BLENDER_URL="https://download.blender.org/release/Blender${BLENDER_VERSION%.*}/${BLENDER_FILE}"
           
           echo "Downloading Blender from: ${BLENDER_URL}"
-          wget -q ${BLENDER_URL} 
-          tar -xf ${BLENDER_FILE} 
+          wget -q ${BLENDER_URL} # Download the Blender archive quietly
+          tar -xf ${BLENDER_FILE} # Extract the archive
           
+          # Define the root directory of the extracted Blender installation
           EXTRACTED_BLENDER_ROOT=$(pwd)/blender-${BLENDER_VERSION}-linux-x64
           
+          # Output this path so subsequent steps can use it
           echo "BLENDER_DIR=${EXTRACTED_BLENDER_ROOT}" >> "$GITHUB_OUTPUT"
           echo "Blender extracted to: ${EXTRACTED_BLENDER_ROOT}"
 
+          # --- Debugging: List contents of the extracted Blender directory ---
+          echo "--- Listing contents of ${EXTRACTED_BLENDER_ROOT} for verification ---"
+          ls -R "${EXTRACTED_BLENDER_ROOT}"
+          echo "--------------------------------------------------------"
+
       - name: Install Python dependencies for Blender
+        # Your Blender Python script uses 'numpy', so we need to install it
+        # into Blender's embedded Python interpreter.
         run: |
           BLENDER_ROOT_DIR="${{ steps.setup-blender.outputs.BLENDER_DIR }}"
+          
+          # --- Debugging: List contents of the 'python' and 'python/bin' directories ---
+          echo "--- Listing contents of ${BLENDER_ROOT_DIR}/python/ ---"
+          ls -l "${BLENDER_ROOT_DIR}/python/" || true # '|| true' prevents failure if dir not found
+          echo "--- Listing contents of ${BLENDER_ROOT_DIR}/python/bin/ ---"
+          ls -l "${BLENDER_ROOT_DIR}/python/bin/" || true # '|| true' prevents failure if dir not found
+          echo "--------------------------------------------------------"
 
+          # Determine the correct path to Blender's Python executable.
+          # We check common locations because the exact path can vary slightly between Blender versions.
           BLENDER_PYTHON=""
-          if [ -f "${BLENDER_ROOT_DIR}/python/bin/python3.11" ]; then
-              BLENDER_PYTHON="${BLENDER_ROOT_DIR}/python/bin/python3.11"
-          elif [ -f "${BLENDER_ROOT_DIR}/python/bin/python" ]; then
+          if [ -f "${BLENDER_ROOT_DIR}/python/bin/python3.10" ]; then
+              BLENDER_PYTHON="${BLENDER_ROOT_DIR}/python/bin/python3.10"
+          elif [ -f "${BLENDER_ROOT_DIR}/3.6/python/bin/python3.10" ]; then # Common for Blender 3.6+
+              BLENDER_PYTHON="${BLENDER_ROOT_DIR}/3.6/python/bin/python3.10"
+          elif [ -f "${BLENDER_ROOT_DIR}/python/bin/python" ]; then # Fallback to generic symlink
               BLENDER_PYTHON="${BLENDER_ROOT_DIR}/python/bin/python"
           else
-              echo "❌ Error: Blender's Python executable not found!"
-              exit 1
+              echo "❌ Error: Could not find Blender's Python executable in common locations."
+              echo "Please inspect the 'Listing contents' debug output above to find the correct path."
+              exit 1 # Fail the workflow if Python isn't found
           fi
           
           echo "Using Blender's Python interpreter: ${BLENDER_PYTHON}"
+          # Ensure pip is available for Blender's Python environment, then install numpy
           ${BLENDER_PYTHON} -m ensurepip --default-pip
           ${BLENDER_PYTHON} -m pip install numpy
 
-      - name: Set up Python for other scripts
+      # --- General Python Dependencies (for other scripts/tests like pytest) ---
+      # This sets up a separate Python environment for other parts of your pipeline
+      # that don't need Blender's embedded Python.
+      - name: Set up Python for other scripts (if needed)
         uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.9" # You can choose your preferred Python version here
 
-      - name: Upgrade pip
+      - name: Upgrade pip (for general Python)
         run: python -m pip install --upgrade pip
 
       - name: Install system dependencies
-        run: sudo apt-get update && sudo apt-get install -y libtbb-dev 
-
-      - name: Install base Python dependencies
         run: |
-          pip install --upgrade h5py scipy pytest
-          pip install -r requirements.txt
+          sudo apt-get update
+          sudo apt-get install -y libtbb-dev # Keep this if other parts of your pipeline require TBB
 
-      - name: Debug Repository Structure
+      - name: Install base Python dependencies from requirements.txt
+        # Exclude numpy here, as it's installed for Blender's Python separately.
+        run: |
+          pip install --upgrade h5py scipy pytest # Keep if these are needed by your test suite or other scripts
+          pip install -r requirements.txt # Install remaining dependencies
+
+      - name: Debug Repository Structure (Full)
         run: ls -R "$GITHUB_WORKSPACE"
 
-      - name: Verify Blender Script Exists
+      - name: Verify Blender Scene Assembly Script Exists
+        # Ensure the correct script name is used here.
         run: |
           if [ ! -f "$GITHUB_WORKSPACE/src/generate_blender_format.py" ]; then
             echo "❌ Error: generate_blender_format.py not found in src directory!"
             exit 1
           fi
 
-      - name: Run Blender Scene Assembly Script
+      - name: Run script to assemble final Blender scene
+        # Execute your Python script using the downloaded Blender executable.
         run: |
           BLENDER_EXEC="${{ steps.setup-blender.outputs.BLENDER_DIR }}/blender"
           PYTHON_SCRIPT="$GITHUB_WORKSPACE/src/generate_blender_format.py"
           echo "Running Blender script: ${PYTHON_SCRIPT} using ${BLENDER_EXEC}"
+          # --background runs Blender without a GUI (essential for CI/CD)
+          # --python executes the specified Python script within Blender's environment
           ${BLENDER_EXEC} --background --python "${PYTHON_SCRIPT}"
 
-      - name: Commit and Push Final Blender Assembly Output
+      # --- Execute Unit & Integration Tests After Blender Assembly ---
+      # These tests should validate the generated .blend file if applicable.
+      # They will use the Python environment set up earlier.
+      # - name: Run unit tests
+      #   run: pytest tests/test_input_validation.py --verbose
+
+      # - name: Run output validation tests
+      #   run: pytest tests/test_output_validation.py --verbose
+
+      # - name: Run integration tests
+      #   run: pytest tests/test_conversion_pipeline.py --verbose
+
+      # - name: Run Blender import tests
+      #   run: pytest tests/test_blender_import_validation.py --verbose
+
+      # - name: Run advanced Blender validation tests
+      #   run: pytest tests/test_blender_advanced_validation.py --verbose
+       
+      - name: Commit and Push Final Blender Assembly Output to Repository
         env:
+          # Ensure you have these secrets configured in your GitHub repository settings:
+          # Settings -> Secrets and variables -> Actions -> Repository secrets
           GIT_USER_NAME: ${{ secrets.GIT_USER_NAME }}
           GIT_USER_EMAIL: ${{ secrets.GIT_USER_EMAIL }}
         run: |
           git config --global user.name "${GIT_USER_NAME}"
           git config --global user.email "${GIT_USER_EMAIL}"
 
-          cd "$GITHUB_WORKSPACE"
+          cd "$GITHUB_WORKSPACE" # Navigate to the root of your repository
+
+          # Define the exact path to the output .blend file as generated by the Python script
           OUTPUT_BLEND_FILE="data/testing-input-output/output/final_animation_scene.blend"
 
           if [ -f "${OUTPUT_BLEND_FILE}" ]; then
-            git add "${OUTPUT_BLEND_FILE}"
-            git status
+            git add "${OUTPUT_BLEND_FILE}" # Stage the newly generated .blend file
+            git status # Display current git status for clarity in logs
+
+            # Check if there are any actual changes staged to avoid creating empty commits
             if [[ $(git diff --cached --quiet; echo $?) -ne 0 ]]; then
-              git commit -m "Auto-update: Final Blender 4.2.10 scene assembly completed"
-              git push origin HEAD
+              git commit -m "Auto-update: Final Blender scene assembly completed"
+              git push origin HEAD # Push changes to the current branch
             else
               echo "✅ No changes to commit!"
             fi
           else
-            echo "❌ No Blender output file detected, skipping commit."
+            echo "❌ No Blender output file detected at ${OUTPUT_BLEND_FILE}, skipping commit."
           fi
