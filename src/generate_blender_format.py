@@ -145,7 +145,7 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
     print("Blender: Processing fluid mesh data...")
     if mesh_data and 'time_steps' in mesh_data and mesh_data['time_steps']:
         mesh_name = mesh_data.get('mesh_name', "FluidMesh")
-        
+       
         # Load static faces once from the top level of the JSON
         static_faces = None
         if 'static_faces' in mesh_data:
@@ -155,24 +155,24 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             print("Blender Error: 'static_faces' key not found in fluid_mesh_data.json. Cannot create mesh object.")
             # For a mesh, faces are essential, so we'll return if they are missing.
             return 
-        
+       
         # Create initial mesh object using the first frame's vertices and static faces
         first_frame_mesh = mesh_data['time_steps'][0]
-        
+       
         # Check if 'vertices' key exists in the first frame data
         if 'vertices' not in first_frame_mesh:
             print(f"Blender Error: 'vertices' key not found in the first time step of mesh data. Cannot create mesh object.")
             return
 
         vertices = np.array(first_frame_mesh['vertices'])
-        
+       
         mesh_blender = bpy.data.meshes.new(mesh_name)
         # Use static_faces here for the initial mesh creation
         mesh_blender.from_pydata(vertices.tolist(), [], static_faces.tolist())
         mesh_blender.update()
         mesh_obj = bpy.data.objects.new(mesh_name, mesh_blender)
         bpy.context.collection.objects.link(mesh_obj)
-        
+       
         # Assign a simple material for visibility
         if "MeshMaterial" not in bpy.data.materials:
             mat = bpy.data.materials.new(name="MeshMaterial")
@@ -190,7 +190,7 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             mesh_obj.data.materials[0] = mat
         else:
             mesh_obj.data.materials.append(mat)
-        
+       
         print(f"Blender: Created initial mesh object: {mesh_obj.name}")
 
         # Animate mesh by updating geometry per frame
@@ -198,7 +198,7 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             if frame_idx > end_frame: # Prevent out of bounds
                 break
             bpy.context.scene.frame_set(frame_idx)
-            
+           
             if 'vertices' not in frame_data:
                 print(f"Blender Warning: 'vertices' key not found for mesh data at frame {frame_idx}. Skipping frame update.")
                 continue
@@ -209,7 +209,7 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             mesh_blender.clear_geometry()
             mesh_blender.from_pydata(current_vertices.tolist(), [], static_faces.tolist()) # Use static_faces
             mesh_blender.update()
-            
+           
             print(f"Blender: Mesh updated for frame {frame_idx}")
     else:
         print("Blender: No mesh data found or 'time_steps' is empty, skipping mesh creation.")
@@ -219,13 +219,13 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
     print("Blender: Processing fluid volume data (creating object and material, skipping grid data)...")
     if volume_data and 'time_steps' in volume_data and volume_data['time_steps']:
         volume_name = volume_data.get('volume_name', "FluidVolume")
-        
+       
         if 'grid_info' not in volume_data:
             print("Blender Error: 'grid_info' missing in volume data. Cannot create volume object.")
             return
 
         grid_info = volume_data['grid_info']
-        
+       
         # Validate required grid_info keys
         required_grid_keys = ['dimensions', 'voxel_size', 'origin']
         if not all(key in grid_info for key in required_grid_keys):
@@ -242,9 +242,11 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
         print(f"Blender: Created initial volume object: {volume_obj.name}")
 
         # --- Workaround: Skip programmatic creation and keyframing of volume grids ---
-        # This section is commented out to avoid the AttributeError.
-        # You will need to manually add and populate these grids in Blender after the file is generated.
-        # print("Blender: Programmatic creation of volume grids skipped due to API issues.")
+        # The 'bpy_prop_collection' object (volume_blender.grids) does not have an 'add' method
+        # for dynamically creating grids in this context, leading to the AttributeError.
+        # Instead, we will create the volume object and material, and the user can manually
+        # add the 'density' and 'temperature' grids in Blender after the file is generated.
+        print("Blender: Programmatic creation and keyframing of volume grids skipped due to API limitations.")
         # volume_grids = {} # This dictionary is now unused
 
         # Assign a principled volume material (this can be created even without grids present)
@@ -256,17 +258,17 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             # Clear existing nodes for a clean setup
             for node in nodes:
                 nodes.remove(node)
-            
+           
             # Add Principled Volume Shader
             principled_volume = nodes.new(type='ShaderNodeVolumePrincipled')
             principled_volume.location = (0, 0)
-            
+           
             # Add Attribute nodes for custom grids - names must match what you'll add manually
-            # These nodes can exist even if the grids don't yet.
+            # These nodes can exist even if the grids don't yet, and will link when grids are added.
             density_attr = nodes.new(type='ShaderNodeAttribute')
             density_attr.location = (-300, 200)
             density_attr.attribute_name = 'density' # Matches what you'll manually add
-            
+           
             temp_attr = nodes.new(type='ShaderNodeAttribute')
             temp_attr.location = (-300, -100)
             temp_attr.attribute_name = 'temperature' # Matches what you'll manually add
@@ -304,22 +306,22 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             volume_obj.data.materials[0] = mat
         else:
             volume_obj.data.materials.append(mat)
-        
+       
         # Set volume object scale and location based on grid info (independent of internal grids)
         volume_obj.location = (origin_x + dx * num_x / 2,
                                origin_y + dy * num_y / 2,
                                origin_z + dz * num_z / 2)
-        volume_obj.scale = (dx * num_x, dy * num_y, dz * num_z) 
+        volume_obj.scale = (dx * num_x, dy * num_y, dz * num_z)
         print(f"Blender: Volume object positioned at {volume_obj.location} and scaled to {volume_obj.scale}")
 
         # --- Workaround: Skip animating volume data per frame ---
-        # This section is also commented out as it relies on the grids being present.
+        # This section is also commented out as it relies on the grids being present and writable.
         # for frame_idx, frame_data in enumerate(volume_data['time_steps']):
-        #     if frame_idx > end_frame:
-        #         break
-        #     bpy.context.scene.frame_set(frame_idx)
-        #     print(f"Blender: Volume data update skipped for frame {frame_idx}.")
-            
+        #    if frame_idx > end_frame:
+        #       break
+        #    bpy.context.scene.frame_set(frame_idx)
+        #    print(f"Blender: Volume data update skipped for frame {frame_idx}.")
+           
     else:
         print("Blender: No volume data found or 'time_steps' is empty, skipping volume object creation.")
 
@@ -381,11 +383,11 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
     light_obj = bpy.data.objects.new(name="SunLight", object_data=light_data)
     bpy.context.collection.objects.link(light_obj)
     # Position light relative to center, slightly above and to the side
-    light_obj.location = (center_x + grid_size_magnitude * 0.5, 
-                          center_y + grid_size_magnitude * 0.5, 
+    light_obj.location = (center_x + grid_size_magnitude * 0.5,
+                          center_y + grid_size_magnitude * 0.5,
                           center_z + grid_size_magnitude * 1.0)
     # Adjust light direction (Euler angles in radians, e.g., to cast shadows from top-right front)
-    light_obj.rotation_euler = (np.radians(45), np.radians(0), np.radians(135)) 
+    light_obj.rotation_euler = (np.radians(45), np.radians(0), np.radians(135))
     light_data.energy = 5 # Adjust brightness (watts for point/spot/area, intensity for sun)
     print("Blender: Camera and lighting set up.")
 
