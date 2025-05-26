@@ -337,12 +337,19 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             material_output = nodes.new(type='ShaderNodeOutputMaterial')
             material_output.location = (300, 0)
 
-            # Link nodes:
-            links.new(density_attr.outputs['Factor'], principled_volume.inputs['Density'])
-            links.new(temp_attr.outputs['Factor'], color_ramp_map_range.inputs['Value'])
-            links.new(color_ramp_map_range.outputs['Result'], color_ramp_colors.inputs['Fac'])
-            links.new(color_ramp_colors.outputs['Color'], principled_volume.inputs['Color']) # Color for volume
-            links.new(principled_volume.outputs['Volume'], material_output.inputs['Volume'])
+            # Debugging: Print available outputs for each node
+            print("Density Attribute Outputs:", density_attr.outputs.keys())
+            print("Temperature Attribute Outputs:", temp_attr.outputs.keys())
+            print("Color Ramp Map Range Outputs:", color_ramp_map_range.outputs.keys())
+            print("Color Ramp Colors Outputs:", color_ramp_colors.outputs.keys())
+            print("Principled Volume Inputs:", principled_volume.inputs.keys())
+            
+            # Link nodes using correct output names
+            links.new(density_attr.outputs.get('Value', None), principled_volume.inputs.get('Density', None))
+            links.new(temp_attr.outputs.get('Value', None), color_ramp_map_range.inputs.get('Value', None))
+            links.new(color_ramp_map_range.outputs.get('Color', None), color_ramp_colors.inputs.get('Fac', None))
+            links.new(color_ramp_colors.outputs.get('Color', None), principled_volume.inputs.get('Color', None))  # Color for volume
+            links.new(principled_volume.outputs.get('Volume', None), material_output.inputs.get('Volume', None))
 
         else:
             mat = bpy.data.materials["VolumeMaterial"]
