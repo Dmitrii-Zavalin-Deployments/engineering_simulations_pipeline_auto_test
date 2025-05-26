@@ -130,6 +130,7 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
     # Estimate FPS if time_points are available, otherwise default to 24
     if mesh_data and 'time_points' in mesh_data and len(mesh_data['time_points']) > 1:
         # Calculate approximate FPS based on the first two time points
+        # Assuming uniform time steps
         fps_estimate = 1 / (mesh_data['time_points'][1] - mesh_data['time_points'][0])
         bpy.context.scene.render.fps = max(1, int(fps_estimate)) # Ensure at least 1 FPS
     else:
@@ -175,11 +176,10 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
         # Assign a simple material for visibility
         if "MeshMaterial" not in bpy.data.materials:
             mat = bpy.data.materials.new(name="MeshMaterial")
-            # mat.diffuse_color = (0.1, 0.5, 0.8, 1.0) # This line is for Blender Internal, not Eevee/Cycles nodes
             mat.use_nodes = True
             principled_bsdf = mat.node_tree.nodes.get('Principled BSDF')
             if principled_bsdf:
-                # FIX: Base Color expects 4 items (RGBA), not 5
+                # Correct Base Color: must be a 4-item (RGBA) tuple
                 principled_bsdf.inputs['Base Color'].default_value = (0.1, 0.5, 0.8, 1.0) # Correct RGBA
                 principled_bsdf.inputs['Roughness'].default_value = 0.5
                 principled_bsdf.inputs['Metallic'].default_value = 0.0
@@ -194,12 +194,8 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
         print(f"Blender: Created initial mesh object: {mesh_obj.name}")
 
         # Animate mesh by updating geometry per frame
-        # Note: This method (clear_geometry + from_pydata) rebuilds the mesh data block on each frame.
-        # For meshes with static topology but changing vertex positions, using Blender's
-        # Shape Keys is a more efficient and common way to animate in Blender.
-        # This current approach is simpler to implement for varying topologies or initial setup.
         for frame_idx, frame_data in enumerate(mesh_data['time_steps']):
-            if frame_idx > end_frame: # Prevent out of bounds if mesh_data has more frames than volume_data or vice versa
+            if frame_idx > end_frame: # Prevent out of bounds
                 break
             bpy.context.scene.frame_set(frame_idx)
             
@@ -214,8 +210,6 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             mesh_blender.from_pydata(current_vertices.tolist(), [], static_faces.tolist()) # Use static_faces
             mesh_blender.update()
             
-            # The animation is implicitly created by changing the geometry at each frame before saving the .blend.
-            # Blender itself doesn't "keyframe" mesh data blocks directly in the same way it keyframes properties.
             print(f"Blender: Mesh updated for frame {frame_idx}")
     else:
         print("Blender: No mesh data found or 'time_steps' is empty, skipping mesh creation.")
@@ -248,6 +242,16 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
         bpy.context.collection.objects.link(volume_obj)
         print(f"Blender: Created initial volume object: {volume_obj.name}")
 
+        # --- NEW: Pre-create all expected grids on the volume data block ---
+        # This ensures the Attribute Nodes in the material can find them.
+        # Initialize them as float grids. Velocity components will be individual float grids.
+        volume_blender.grids.new("density", type='FLOAT')
+        volume_blender.grids.new("temperature", type='FLOAT')
+        volume_blender.grids.new("velocity_X", type='FLOAT')
+        volume_blender.grids.new("velocity_Y", type='FLOAT')
+        volume_blender.grids.new("velocity_Z", type='FLOAT')
+        print("Blender: Pre-created volume grids on data block.")
+
         # Assign a principled volume material
         if "VolumeMaterial" not in bpy.data.materials:
             mat = bpy.data.materials.new(name="VolumeMaterial")
@@ -262,14 +266,14 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             principled_volume = nodes.new(type='ShaderNodeVolumePrincipled')
             principled_volume.location = (0, 0)
             
-            # Add Attribute nodes for custom grids
+            # Add Attribute nodes for custom grids - names must match pre-created grids
             density_attr = nodes.new(type='ShaderNodeAttribute')
             density_attr.location = (-300, 200)
-            density_attr.attribute_name = 'density' # Matches grid name used below
+            density_attr.attribute_name = 'density' 
             
             temp_attr = nodes.new(type='ShaderNodeAttribute')
             temp_attr.location = (-300, -100)
-            temp_attr.attribute_name = 'temperature' # Matches grid name used below
+            temp_attr.attribute_name = 'temperature'
 
             # Add a ColorRamp for temperature (e.g., blue for cold, red for hot)
             color_ramp_map_range = nodes.new(type='ShaderNodeMapRange')
@@ -328,10 +332,8 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             # --- Process Density Grid ---
             density_grid_name = "density" # This name must match the Attribute Node in the material!
             if 'density_data' in frame_data:
-                if density_grid_name not in volume_blender.grids:
-                    density_grid = volume_blender.grids.new(density_grid_name, type='FLOAT')
-                else:
-                    density_grid = volume_blender.grids[density_grid_name]
+                # Get the already-created grid
+                density_grid = volume_blender.grids[density_grid_name]
 
                 density_grid.dimensions = (num_x, num_y, num_z)
                 density_grid.origin = (origin_x, origin_y, origin_z)
@@ -370,10 +372,8 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
                     for i, (comp_name_suffix, comp_data) in enumerate(zip(['_X', '_Y', '_Z'], 
                                                                            [vx_data_blender_order, vy_data_blender_order, vz_data_blender_order])):
                         grid_name = "velocity" + comp_name_suffix # e.g., "velocity_X"
-                        if grid_name not in volume_blender.grids:
-                            comp_grid = volume_blender.grids.new(grid_name, type='FLOAT')
-                        else:
-                            comp_grid = volume_blender.grids[grid_name]
+                        # Get the already-created grid
+                        comp_grid = volume_blender.grids[grid_name]
                         
                         comp_grid.dimensions = (num_x, num_y, num_z)
                         comp_grid.origin = (origin_x, origin_y, origin_z)
@@ -385,10 +385,8 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             # --- Process Temperature Grid ---
             temp_grid_name = "temperature" # This name must match the Attribute Node in the material!
             if 'temperature_data' in frame_data:
-                if temp_grid_name not in volume_blender.grids:
-                    temp_grid = volume_blender.grids.new(temp_grid_name, type='FLOAT')
-                else:
-                    temp_grid = volume_blender.grids[temp_grid_name]
+                # Get the already-created grid
+                temp_grid = volume_blender.grids[temp_grid_name]
                 
                 temp_grid.dimensions = (num_x, num_y, num_z)
                 temp_grid.origin = (origin_x, origin_y, origin_z)
