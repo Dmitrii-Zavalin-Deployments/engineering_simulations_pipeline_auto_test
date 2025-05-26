@@ -239,6 +239,13 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
         # --- FIX: Create the volume data block with ONLY the name argument ---
         # As per Blender 3.x API, bpy.data.volumes.new() takes only one argument (name).
         volume_blender = bpy.data.volumes.new(volume_name)
+        
+        # --- DEBUGGING PRINTS: Check what's available on volume_blender.grids ---
+        print(f"DEBUG: Type of volume_blender: {type(volume_blender)}")
+        print(f"DEBUG: Is volume_blender a bpy.types.Volume? {isinstance(volume_blender, bpy.types.Volume)}")
+        print(f"DEBUG: Dir of volume_blender.grids: {dir(volume_blender.grids)}")
+        # --- END DEBUGGING PRINTS ---
+
         volume_obj = bpy.data.objects.new(volume_name, volume_blender)
         bpy.context.collection.objects.link(volume_obj)
         print(f"Blender: Created initial volume object: {volume_obj.name}")
