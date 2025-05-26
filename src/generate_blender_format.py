@@ -243,7 +243,7 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
         # --- DEBUGGING PRINTS: Check what's available on volume_blender.grids ---
         print(f"DEBUG: Type of volume_blender: {type(volume_blender)}")
         print(f"DEBUG: Is volume_blender a bpy.types.Volume? {isinstance(volume_blender, bpy.types.Volume)}")
-        print(f"DEBUG: Dir of volume_blender.grids: {dir(volume_blender.grids)}")
+        # print(f"DEBUG: Dir of volume_blender.grids: {dir(volume_blender.grids)}") # Removed this as it can be very verbose
         # --- END DEBUGGING PRINTS ---
 
         volume_obj = bpy.data.objects.new(volume_name, volume_blender)
@@ -252,13 +252,32 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
 
         # --- Pre-create all expected grids on the volume data block ---
         # This ensures the Attribute Nodes in the material can find them by name and type.
-        # This uses new_grid(), which IS the correct method on the grids collection.
-        print("Blender: Pre-creating volume grids on data block using new_grid()...")
-        volume_blender.grids.new_grid(name="density", type='FLOAT')
-        volume_blender.grids.new_grid(name="temperature", type='FLOAT')
-        volume_blender.grids.new_grid(name="velocity_X", type='FLOAT')
-        volume_blender.grids.new_grid(name="velocity_Y", type='FLOAT')
-        volume_blender.grids.new_grid(name="velocity_Z", type='FLOAT')
+        # This uses volume_blender.grids.new(), then setting grid.name and grid.data_type.
+        print("Blender: Pre-creating volume grids on data block using new()...")
+        
+        # Dictionary to store grid references for later updates
+        volume_grids = {}
+
+        # Density Grid
+        grid = volume_blender.grids.new()
+        grid.name = "density"
+        grid.data_type = 'FLOAT'
+        volume_grids["density"] = grid
+
+        # Temperature Grid
+        grid = volume_blender.grids.new()
+        grid.name = "temperature"
+        grid.data_type = 'FLOAT'
+        volume_grids["temperature"] = grid
+
+        # Velocity Grids
+        for comp_name_suffix in ['_X', '_Y', '_Z']:
+            grid_name = "velocity" + comp_name_suffix
+            grid = volume_blender.grids.new()
+            grid.name = grid_name
+            grid.data_type = 'FLOAT' # Individual components are floats
+            volume_grids[grid_name] = grid
+        
         print("Blender: Volume grids pre-created.")
 
         # Assign a principled volume material
@@ -341,8 +360,8 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             # --- Process Density Grid ---
             density_grid_name = "density" # This name must match the Attribute Node in the material!
             if 'density_data' in frame_data:
-                # Get the already-created grid (no need to check for existence or create again)
-                density_grid = volume_blender.grids[density_grid_name]
+                # Get the already-created grid from our dictionary
+                density_grid = volume_grids[density_grid_name]
 
                 density_grid.dimensions = (num_x, num_y, num_z)
                 density_grid.origin = (origin_x, origin_y, origin_z)
@@ -381,8 +400,8 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
                     for i, (comp_name_suffix, comp_data) in enumerate(zip(['_X', '_Y', '_Z'], 
                                                                            [vx_data_blender_order, vy_data_blender_order, vz_data_blender_order])):
                         grid_name = "velocity" + comp_name_suffix # e.g., "velocity_X"
-                        # Get the already-created grid
-                        comp_grid = volume_blender.grids[grid_name]
+                        # Get the already-created grid from our dictionary
+                        comp_grid = volume_grids[grid_name]
                         
                         comp_grid.dimensions = (num_x, num_y, num_z)
                         comp_grid.origin = (origin_x, origin_y, origin_z)
@@ -394,8 +413,8 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             # --- Process Temperature Grid ---
             temp_grid_name = "temperature" # This name must match the Attribute Node in the material!
             if 'temperature_data' in frame_data:
-                # Get the already-created grid
-                temp_grid = volume_blender.grids[temp_grid_name]
+                # Get the already-created grid from our dictionary
+                temp_grid = volume_grids[temp_grid_name]
                 
                 temp_grid.dimensions = (num_x, num_y, num_z)
                 temp_grid.origin = (origin_x, origin_y, origin_z)
