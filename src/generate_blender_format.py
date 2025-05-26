@@ -345,11 +345,47 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             print("Principled Volume Inputs:", principled_volume.inputs.keys())
             
             # Link nodes using correct output names
-            links.new(density_attr.outputs.get('Value', None), principled_volume.inputs.get('Density', None))
-            links.new(temp_attr.outputs.get('Value', None), color_ramp_map_range.inputs.get('Value', None))
-            links.new(color_ramp_map_range.outputs.get('Color', None), color_ramp_colors.inputs.get('Fac', None))
-            links.new(color_ramp_colors.outputs.get('Color', None), principled_volume.inputs.get('Color', None))  # Color for volume
-            links.new(principled_volume.outputs.get('Volume', None), material_output.inputs.get('Volume', None))
+            # Ensure the output socket exists
+            density_output = density_attr.outputs.get('Value')
+            density_input = principled_volume.inputs.get('Density')
+            
+            if density_output and density_input:
+                links.new(density_output, density_input)
+            else:
+                print("❌ Error: One or both sockets are missing for Density link!")
+            
+            # Repeat for other links
+            temp_output = temp_attr.outputs.get('Value')
+            temp_input = color_ramp_map_range.inputs.get('Value')
+            
+            if temp_output and temp_input:
+                links.new(temp_output, temp_input)
+            else:
+                print("❌ Error: One or both sockets are missing for Temperature link!")
+            
+            color_ramp_output = color_ramp_map_range.outputs.get('Color')
+            color_ramp_input = color_ramp_colors.inputs.get('Fac')
+            
+            if color_ramp_output and color_ramp_input:
+                links.new(color_ramp_output, color_ramp_input)
+            else:
+                print("❌ Error: One or both sockets are missing for Color Ramp link!")
+            
+            color_output = color_ramp_colors.outputs.get('Color')
+            color_input = principled_volume.inputs.get('Color')
+            
+            if color_output and color_input:
+                links.new(color_output, color_input)
+            else:
+                print("❌ Error: One or both sockets are missing for Volume Color link!")
+            
+            volume_output = principled_volume.outputs.get('Volume')
+            volume_input = material_output.inputs.get('Volume')
+            
+            if volume_output and volume_input:
+                links.new(volume_output, volume_input)
+            else:
+                print("❌ Error: One or both sockets are missing for Volume Output link!")
 
         else:
             mat = bpy.data.materials["VolumeMaterial"]
