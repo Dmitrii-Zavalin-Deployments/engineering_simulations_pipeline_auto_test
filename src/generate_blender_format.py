@@ -2,7 +2,7 @@ import bpy
 import json
 import os
 import numpy as np # For numerical operations, especially with volume data
-from mathutils import Vector, Quaternion # For camera orientation helper
+from mathutils import Vector, Quaternion # For Blender's math types
 
 # --- CONFIGURATION ---
 # Determine the project root dynamically.
@@ -152,8 +152,7 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             print(f"Blender: Loaded {len(static_faces)} static faces.")
         else:
             print("Blender Error: 'static_faces' key not found in fluid_mesh_data.json. Cannot create mesh object.")
-            # Decide if you want to abort or proceed without mesh
-            # For a mesh, faces are essential, so we'll return.
+            # For a mesh, faces are essential, so we'll return if they are missing.
             return 
             
         # Create initial mesh object using the first frame's vertices and static faces
@@ -176,11 +175,12 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
         # Assign a simple material for visibility
         if "MeshMaterial" not in bpy.data.materials:
             mat = bpy.data.materials.new(name="MeshMaterial")
-            mat.diffuse_color = (0.1, 0.5, 0.8, 1.0) # Blue color
+            # mat.diffuse_color = (0.1, 0.5, 0.8, 1.0) # This line is for Blender Internal, not Eevee/Cycles nodes
             mat.use_nodes = True
             principled_bsdf = mat.node_tree.nodes.get('Principled BSDF')
             if principled_bsdf:
-                principled_bsdf.inputs['Base Color'].default_value = (0.1, 0.5, 0.8, 1.0, 1.0) # RGBA
+                # FIX: Base Color expects 4 items (RGBA), not 5
+                principled_bsdf.inputs['Base Color'].default_value = (0.1, 0.5, 0.8, 1.0) # Correct RGBA
                 principled_bsdf.inputs['Roughness'].default_value = 0.5
                 principled_bsdf.inputs['Metallic'].default_value = 0.0
         else:
@@ -194,12 +194,10 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
         print(f"Blender: Created initial mesh object: {mesh_obj.name}")
 
         # Animate mesh by updating geometry per frame
-        # This method (clear_geometry + from_pydata) is suitable if mesh topology
-        # *changes* per frame, or for simpler meshes where performance isn't a major concern.
-        # For meshes with *static topology* but changing vertex positions,
-        # using Blender's **Shape Keys** is the canonical and more efficient way to animate.
-        # Implementing shape keys is more complex and depends on vertex order consistency.
-        # This current approach rebuilds the mesh data block on each frame.
+        # Note: This method (clear_geometry + from_pydata) rebuilds the mesh data block on each frame.
+        # For meshes with static topology but changing vertex positions, using Blender's
+        # Shape Keys is a more efficient and common way to animate in Blender.
+        # This current approach is simpler to implement for varying topologies or initial setup.
         for frame_idx, frame_data in enumerate(mesh_data['time_steps']):
             if frame_idx > end_frame: # Prevent out of bounds if mesh_data has more frames than volume_data or vice versa
                 break
@@ -216,10 +214,8 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             mesh_blender.from_pydata(current_vertices.tolist(), [], static_faces.tolist()) # Use static_faces
             mesh_blender.update()
             
-            # Note: Directly keyframing mesh data blocks is not common.
-            # The animation is achieved by changing the geometry at each frame and saving the .blend.
-            # For a playable animation *within* Blender, shape keys or Alembic export/import is ideal.
-            # This script focuses on creating the correct static state per frame in the final .blend.
+            # The animation is implicitly created by changing the geometry at each frame before saving the .blend.
+            # Blender itself doesn't "keyframe" mesh data blocks directly in the same way it keyframes properties.
             print(f"Blender: Mesh updated for frame {frame_idx}")
     else:
         print("Blender: No mesh data found or 'time_steps' is empty, skipping mesh creation.")
@@ -258,48 +254,50 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             mat.use_nodes = True
             nodes = mat.node_tree.nodes
             links = mat.node_tree.links
-            # Clear existing nodes
+            # Clear existing nodes for a clean setup
             for node in nodes:
                 nodes.remove(node)
             
+            # Add Principled Volume Shader
             principled_volume = nodes.new(type='ShaderNodeVolumePrincipled')
             principled_volume.location = (0, 0)
             
             # Add Attribute nodes for custom grids
             density_attr = nodes.new(type='ShaderNodeAttribute')
             density_attr.location = (-300, 200)
-            density_attr.attribute_name = 'density' # Matches grid name
+            density_attr.attribute_name = 'density' # Matches grid name used below
             
             temp_attr = nodes.new(type='ShaderNodeAttribute')
             temp_attr.location = (-300, -100)
-            temp_attr.attribute_name = 'temperature' # Matches grid name
+            temp_attr.attribute_name = 'temperature' # Matches grid name used below
 
-            # Add ColorRamp for temperature (e.g., blue to red)
-            color_ramp = nodes.new(type='ShaderNodeMapRange')
-            color_ramp.location = (0, -200)
-            # You might need to adjust 'From Min/Max' based on your temperature range
-            color_ramp.inputs['From Min'].default_value = 273.15 # e.g., 0 C
-            color_ramp.inputs['From Max'].default_value = 373.15 # e.g., 100 C
-            color_ramp.inputs['To Min'].default_value = 0.0 # Map to range 0-1
-            color_ramp.inputs['To Max'].default_value = 1.0
+            # Add a ColorRamp for temperature (e.g., blue for cold, red for hot)
+            color_ramp_map_range = nodes.new(type='ShaderNodeMapRange')
+            color_ramp_map_range.location = (0, -200)
+            # You might need to adjust 'From Min/Max' based on your actual temperature range
+            color_ramp_map_range.inputs['From Min'].default_value = 273.15 # e.g., 0 Celsius
+            color_ramp_map_range.inputs['From Max'].default_value = 373.15 # e.g., 100 Celsius
+            color_ramp_map_range.inputs['To Min'].default_value = 0.0 # Map to range 0-1
+            color_ramp_map_range.inputs['To Max'].default_value = 1.0
 
-            color_ramp_colors = color_ramp.node_tree.nodes.new(type='ShaderNodeValToRGB')
+            color_ramp_colors = nodes.new(type='ShaderNodeValToRGB')
             color_ramp_colors.location = (150, -200)
+            # Add color stops: blue at 0, red at 1
             color_ramp_colors.color_ramp.elements.new(0.0).color = (0.0, 0.0, 1.0, 1.0) # Blue
             color_ramp_colors.color_ramp.elements.new(1.0).color = (1.0, 0.0, 0.0, 1.0) # Red
             color_ramp_colors.color_ramp.elements[0].position = 0.0
             color_ramp_colors.color_ramp.elements[1].position = 1.0
 
 
-            # Output
+            # Material Output Node
             material_output = nodes.new(type='ShaderNodeOutputMaterial')
             material_output.location = (300, 0)
 
-            # Link nodes
+            # Link nodes:
             links.new(density_attr.outputs['Factor'], principled_volume.inputs['Density'])
-            links.new(temp_attr.outputs['Factor'], color_ramp.inputs['Value'])
-            links.new(color_ramp.outputs['Result'], color_ramp_colors.inputs['Fac'])
-            links.new(color_ramp_colors.outputs['Color'], principled_volume.inputs['Color'])
+            links.new(temp_attr.outputs['Factor'], color_ramp_map_range.inputs['Value'])
+            links.new(color_ramp_map_range.outputs['Result'], color_ramp_colors.inputs['Fac'])
+            links.new(color_ramp_colors.outputs['Color'], principled_volume.inputs['Color']) # Color for volume
             links.new(principled_volume.outputs['Volume'], material_output.inputs['Volume'])
 
         else:
@@ -323,12 +321,12 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
 
         # Animate volume data per frame
         for frame_idx, frame_data in enumerate(volume_data['time_steps']):
-            if frame_idx > end_frame: # Prevent out of bounds
+            if frame_idx > end_frame: # Prevent out of bounds if volume_data has more frames
                 break
             bpy.context.scene.frame_set(frame_idx)
 
             # --- Process Density Grid ---
-            density_grid_name = "density"
+            density_grid_name = "density" # This name must match the Attribute Node in the material!
             if 'density_data' in frame_data:
                 if density_grid_name not in volume_blender.grids:
                     density_grid = volume_blender.grids.new(density_grid_name, type='FLOAT')
@@ -343,15 +341,16 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
                 if len(density_data) != num_x * num_y * num_z:
                     print(f"Blender Warning: Density data size mismatch for frame {frame_idx}. Expected {num_x*num_y*num_z}, Got {len(density_data)}")
                 else:
-                    # Reshape from flat (X-Y-Z order assumed from simulation) to (X, Y, Z),
+                    # Reshape from flat (assuming X-Y-Z fastest to slowest in simulation output) to (X, Y, Z),
                     # then transpose to (Z, Y, X) and flatten for Blender's foreach_set.
-                    # This ensures correct mapping for foreach_set which expects Z-Y-X fastest to slowest index.
+                    # Blender's foreach_set for grids expects data in Z-Y-X order.
                     density_data_reshaped_blender_order = density_data.reshape(num_x, num_y, num_z).transpose(2,1,0).flatten()
                     density_grid.points.foreach_set('value', density_data_reshaped_blender_order)
                     density_grid.keyframe_insert(data_path='points', frame=frame_idx)
                     # print(f"  - Keyframed density grid for frame {frame_idx}") # Commented for less verbose output
 
             # --- Process Velocity Grids (X, Y, Z components) ---
+            # These are for vector fields, e.g., for motion blur or visualizers
             if 'velocity_data' in frame_data:
                 velocity_data = np.array(frame_data['velocity_data'], dtype=np.float32) # Assumed (N, 3) for N voxels
                 
@@ -363,27 +362,28 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
                     # Reshape velocity data from (num_voxels, 3) to (Nx, Ny, Nz, 3)
                     velocity_data_grid = velocity_data.reshape(num_x, num_y, num_z, 3)
 
-                    # Extract components and transpose to Blender's order
+                    # Extract components and transpose each to Blender's (Z,Y,X) order
                     vx_data_blender_order = velocity_data_grid[:,:,:,0].transpose(2,1,0).flatten()
                     vy_data_blender_order = velocity_data_grid[:,:,:,1].transpose(2,1,0).flatten()
                     vz_data_blender_order = velocity_data_grid[:,:,:,2].transpose(2,1,0).flatten()
 
-                    for i, (comp_name, comp_data) in enumerate(zip(['velocity_X', 'velocity_Y', 'velocity_Z'], 
-                                                                    [vx_data_blender_order, vy_data_blender_order, vz_data_blender_order])):
-                        if comp_name not in volume_blender.grids:
-                            comp_grid = volume_blender.grids.new(comp_name, type='FLOAT')
+                    for i, (comp_name_suffix, comp_data) in enumerate(zip(['_X', '_Y', '_Z'], 
+                                                                           [vx_data_blender_order, vy_data_blender_order, vz_data_blender_order])):
+                        grid_name = "velocity" + comp_name_suffix # e.g., "velocity_X"
+                        if grid_name not in volume_blender.grids:
+                            comp_grid = volume_blender.grids.new(grid_name, type='FLOAT')
                         else:
-                            comp_grid = volume_blender.grids[comp_name]
+                            comp_grid = volume_blender.grids[grid_name]
                         
                         comp_grid.dimensions = (num_x, num_y, num_z)
                         comp_grid.origin = (origin_x, origin_y, origin_z)
                         comp_grid.spacing = (dx, dy, dz)
                         comp_grid.points.foreach_set('value', comp_data)
                         comp_grid.keyframe_insert(data_path='points', frame=frame_idx)
-                        # print(f"  - Keyframed {comp_name} grid for frame {frame_idx}") # Commented for less verbose output
+                        # print(f"  - Keyframed {grid_name} grid for frame {frame_idx}") # Commented for less verbose output
             
             # --- Process Temperature Grid ---
-            temp_grid_name = "temperature"
+            temp_grid_name = "temperature" # This name must match the Attribute Node in the material!
             if 'temperature_data' in frame_data:
                 if temp_grid_name not in volume_blender.grids:
                     temp_grid = volume_blender.grids.new(temp_grid_name, type='FLOAT')
@@ -398,6 +398,7 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
                 if len(temperature_data) != num_x * num_y * num_z:
                     print(f"Blender Warning: Temperature data size mismatch for frame {frame_idx}. Expected {num_x*num_y*num_z}, Got {len(temperature_data)}. Skipping temperature grid.")
                 else:
+                    # Reshape and transpose to Blender's Z-Y-X order
                     temperature_data_reshaped_blender_order = temperature_data.reshape(num_x, num_y, num_z).transpose(2,1,0).flatten()
                     temp_grid.points.foreach_set('value', temperature_data_reshaped_blender_order)
                     temp_grid.keyframe_insert(data_path='points', frame=frame_idx)
@@ -410,7 +411,7 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
     # --- 6. (Optional) Setup Camera and Lighting ---
     print("Blender: Setting up camera and lighting...")
     
-    # Delete default objects (like the default Cube often present)
+    # Delete default objects (like the default Cube often present in factory settings)
     bpy.ops.object.select_all(action='DESELECT')
     if "Cube" in bpy.data.objects:
         obj = bpy.data.objects["Cube"]
@@ -421,7 +422,7 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
 
     # Calculate approximate center of the simulation grid for camera/light placement
     center_x, center_y, center_z = 0, 0, 0
-    grid_size_magnitude = 10.0 # Default fallback if no volume data
+    grid_size_magnitude = 10.0 # Default fallback if no valid data to derive bounds
     
     if volume_data and 'grid_info' in volume_data:
         grid_info = volume_data['grid_info']
@@ -436,6 +437,7 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
         mesh_verts = np.array([v.co for v in mesh_obj.data.vertices])
         if mesh_verts.size > 0:
             center_x, center_y, center_z = np.mean(mesh_verts, axis=0)
+            # Use bounding box diagonal for size estimate
             grid_size_magnitude = np.linalg.norm(np.max(mesh_verts, axis=0) - np.min(mesh_verts, axis=0))
         
     # Simple camera setup
@@ -444,21 +446,21 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
     bpy.context.collection.objects.link(cam_obj)
     bpy.context.scene.camera = cam_obj
         
-    # Position camera to view the scene (adjust as needed based on your simulation bounds)
+    # Position camera to view the scene (adjust multipliers for desired zoom/angle)
     view_distance = grid_size_magnitude * 2.0 # Adjust multiplier for desired zoom level
-    cam_obj.location = (center_x + view_distance * 0.8,
-                        center_y - view_distance * 1.2, # Pull back on Y (Blender's default front view)
-                        center_z + view_distance * 0.75)
+    cam_obj.location = (center_x + view_distance * 0.8, # Move along X
+                        center_y - view_distance * 1.2, # Pull back along Y (Blender's default front view)
+                        center_z + view_distance * 0.75) # Move up along Z
         
     # Point camera towards the center of the grid
     look_at_vec = Vector((center_x, center_y, center_z))
     cam_location_vec = Vector(cam_obj.location)
     direction_to_center = look_at_vec - cam_location_vec
     
-    cam_obj.rotation_mode = 'QUATERNION'
+    cam_obj.rotation_mode = 'QUATERNION' # Use quaternion for rotation to avoid gimbal lock
     cam_obj.rotation_quaternion = direction_to_rotation_quat(direction_to_center)
     
-    # Simple light setup (Sun lamp)
+    # Simple light setup (Sun lamp for directional lighting)
     light_data = bpy.data.lights.new(name="SunLight", type='SUN')
     light_obj = bpy.data.objects.new(name="SunLight", object_data=light_data)
     bpy.context.collection.objects.link(light_obj)
@@ -466,20 +468,25 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
     light_obj.location = (center_x + grid_size_magnitude * 0.5, 
                           center_y + grid_size_magnitude * 0.5, 
                           center_z + grid_size_magnitude * 1.0)
-    # Adjust light direction (Euler angles in radians)
-    light_obj.rotation_euler = (np.radians(45), np.radians(0), np.radians(135)) # From top-right front
-    light_data.energy = 5 # Adjust brightness
+    # Adjust light direction (Euler angles in radians, e.g., to cast shadows from top-right front)
+    light_obj.rotation_euler = (np.radians(45), np.radians(0), np.radians(135)) 
+    light_data.energy = 5 # Adjust brightness (watts for point/spot/area, intensity for sun)
     print("Blender: Camera and lighting set up.")
 
     # --- 7. Save the final .blend file ---
     try:
+        # compress=True makes the .blend file smaller, good for repositories
         bpy.ops.wm.save_as_mainfile(filepath=output_blend_file_path, compress=True)
         print(f"Blender: Scene saved successfully to: {output_blend_file_path}")
     except Exception as e:
         print(f"Blender Error: Could not save Blender file: {e}")
+        # Optionally, re-raise the exception or exit to fail the workflow
+        # raise # Uncomment to make the step explicitly fail on save error
 
     print("--- Blender: Scene assembly complete! ---")
 
 # --- Main execution block when run with Blender's Python ---
+# This ensures that assemble_fluid_scene is called only when the script is executed directly
+# (e.g., by Blender's --python argument), not when imported as a module.
 if __name__ == "__main__":
     assemble_fluid_scene(INPUT_MESH_JSON_PATH, INPUT_VOLUME_JSON_PATH, OUTPUT_BLEND_FILE_PATH)
