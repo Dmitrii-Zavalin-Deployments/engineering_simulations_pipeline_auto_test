@@ -413,77 +413,90 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             bpy.context.scene.frame_set(frame_idx)
 
             # --- Process Density Grid ---
-            density_grid_name = "density" # This name must match the Attribute Node in the material!
+            density_grid_name = "density"  # This name must match the Attribute Node in the material!
             if 'density_data' in frame_data:
-                # Get the already-created grid from our dictionary
-                density_grid = volume_grids[density_grid_name]
-
-                density_grid.dimensions = (num_x, num_y, num_z)
-                density_grid.origin = (origin_x, origin_y, origin_z)
-                density_grid.spacing = (dx, dy, dz)
-
-                density_data = np.array(frame_data['density_data'], dtype=np.float32)
-                if len(density_data) != num_x * num_y * num_z:
-                    print(f"Blender Warning: Density data size mismatch for frame {frame_idx}. Expected {num_x*num_y*num_z}, Got {len(density_data)}")
+                if density_grid_name in volume_grids:
+                    # Get the already-created grid from our dictionary
+                    density_grid = volume_grids[density_grid_name]
+            
+                    density_grid.dimensions = (num_x, num_y, num_z)
+                    density_grid.origin = (origin_x, origin_y, origin_z)
+                    density_grid.spacing = (dx, dy, dz)
+            
+                    density_data = np.array(frame_data['density_data'], dtype=np.float32)
+                    if len(density_data) != num_x * num_y * num_z:
+                        print(f"⚠️ Blender Warning: Density data size mismatch for frame {frame_idx}. Expected {num_x*num_y*num_z}, Got {len(density_data)}")
+                    else:
+                        # Reshape and transpose to Blender's (Z,Y,X) order
+                        density_data_reshaped_blender_order = density_data.reshape(num_x, num_y, num_z).transpose(2,1,0).flatten()
+            
+                        if density_grid.points:
+                            density_grid.points.foreach_set('value', density_data_reshaped_blender_order)
+                            density_grid.keyframe_insert(data_path='points', frame=frame_idx)
+                        else:
+                            print(f"❌ Error: Density grid points collection is missing or uninitialized!")
                 else:
-                    # Reshape from flat (assuming X-Y-Z fastest to slowest in simulation output) to (X, Y, Z),
-                    # then transpose to (Z, Y, X) and flatten for Blender's foreach_set.
-                    # Blender's foreach_set for grids expects data in Z-Y-X order.
-                    density_data_reshaped_blender_order = density_data.reshape(num_x, num_y, num_z).transpose(2,1,0).flatten()
-                    density_grid.points.foreach_set('value', density_data_reshaped_blender_order)
-                    density_grid.keyframe_insert(data_path='points', frame=frame_idx)
-                    # print(f"  - Keyframed density grid for frame {frame_idx}") # Commented for less verbose output
-
+                    print(f"❌ Error: '{density_grid_name}' not found in volume_grids!")
+            
             # --- Process Velocity Grids (X, Y, Z components) ---
-            # These are for vector fields, e.g., for motion blur or visualizers
             if 'velocity_data' in frame_data:
-                velocity_data = np.array(frame_data['velocity_data'], dtype=np.float32) # Assumed (N, 3) for N voxels
-                
-                # Check if velocity data size matches expected volume size
+                velocity_data = np.array(frame_data['velocity_data'], dtype=np.float32)  # Assumed (N, 3) for N voxels
+            
                 expected_velocity_elements = num_x * num_y * num_z * 3
                 if len(velocity_data.flatten()) != expected_velocity_elements:
-                    print(f"Blender Warning: Velocity data size mismatch for frame {frame_idx}. Expected {expected_velocity_elements}, Got {len(velocity_data.flatten())}. Skipping velocity grids.")
+                    print(f"⚠️ Blender Warning: Velocity data size mismatch for frame {frame_idx}. Expected {expected_velocity_elements}, Got {len(velocity_data.flatten())}. Skipping velocity grids.")
                 else:
                     # Reshape velocity data from (num_voxels, 3) to (Nx, Ny, Nz, 3)
                     velocity_data_grid = velocity_data.reshape(num_x, num_y, num_z, 3)
-
+            
                     # Extract components and transpose each to Blender's (Z,Y,X) order
-                    vx_data_blender_order = velocity_data_grid[:,:,:,0].transpose(2,1,0).flatten()
-                    vy_data_blender_order = velocity_data_grid[:,:,:,1].transpose(2,1,0).flatten()
-                    vz_data_blender_order = velocity_data_grid[:,:,:,2].transpose(2,1,0).flatten()
-
-                    for i, (comp_name_suffix, comp_data) in enumerate(zip(['_X', '_Y', '_Z'], 
-                                                                           [vx_data_blender_order, vy_data_blender_order, vz_data_blender_order])):
-                        grid_name = "velocity" + comp_name_suffix # e.g., "velocity_X"
-                        # Get the already-created grid from our dictionary
-                        comp_grid = volume_grids[grid_name]
-                        
-                        comp_grid.dimensions = (num_x, num_y, num_z)
-                        comp_grid.origin = (origin_x, origin_y, origin_z)
-                        comp_grid.spacing = (dx, dy, dz)
-                        comp_grid.points.foreach_set('value', comp_data)
-                        comp_grid.keyframe_insert(data_path='points', frame=frame_idx)
-                        # print(f"  - Keyframed {grid_name} grid for frame {frame_idx}") # Commented for less verbose output
+                    velocity_components = {
+                        '_X': velocity_data_grid[:,:,:,0].transpose(2,1,0).flatten(),
+                        '_Y': velocity_data_grid[:,:,:,1].transpose(2,1,0).flatten(),
+                        '_Z': velocity_data_grid[:,:,:,2].transpose(2,1,0).flatten()
+                    }
+            
+                    for comp_name_suffix, comp_data in velocity_components.items():
+                        grid_name = "velocity" + comp_name_suffix  # e.g., "velocity_X"
+            
+                        if grid_name in volume_grids:
+                            comp_grid = volume_grids[grid_name]
+            
+                            comp_grid.dimensions = (num_x, num_y, num_z)
+                            comp_grid.origin = (origin_x, origin_y, origin_z)
+                            comp_grid.spacing = (dx, dy, dz)
+            
+                            if comp_grid.points:
+                                comp_grid.points.foreach_set('value', comp_data)
+                                comp_grid.keyframe_insert(data_path='points', frame=frame_idx)
+                            else:
+                                print(f"❌ Error: {grid_name} grid points collection is missing or uninitialized!")
+                        else:
+                            print(f"❌ Error: '{grid_name}' not found in volume_grids!")
             
             # --- Process Temperature Grid ---
-            temp_grid_name = "temperature" # This name must match the Attribute Node in the material!
+            temp_grid_name = "temperature"  # This name must match the Attribute Node in the material!
             if 'temperature_data' in frame_data:
-                # Get the already-created grid from our dictionary
-                temp_grid = volume_grids[temp_grid_name]
-                
-                temp_grid.dimensions = (num_x, num_y, num_z)
-                temp_grid.origin = (origin_x, origin_y, origin_z)
-                temp_grid.spacing = (dx, dy, dz)
-                
-                temperature_data = np.array(frame_data['temperature_data'], dtype=np.float32)
-                if len(temperature_data) != num_x * num_y * num_z:
-                    print(f"Blender Warning: Temperature data size mismatch for frame {frame_idx}. Expected {num_x*num_y*num_z}, Got {len(temperature_data)}. Skipping temperature grid.")
+                if temp_grid_name in volume_grids:
+                    temp_grid = volume_grids[temp_grid_name]
+            
+                    temp_grid.dimensions = (num_x, num_y, num_z)
+                    temp_grid.origin = (origin_x, origin_y, origin_z)
+                    temp_grid.spacing = (dx, dy, dz)
+            
+                    temperature_data = np.array(frame_data['temperature_data'], dtype=np.float32)
+                    if len(temperature_data) != num_x * num_y * num_z:
+                        print(f"⚠️ Blender Warning: Temperature data size mismatch for frame {frame_idx}. Expected {num_x*num_y*num_z}, Got {len(temperature_data)}. Skipping temperature grid.")
+                    else:
+                        temperature_data_reshaped_blender_order = temperature_data.reshape(num_x, num_y, num_z).transpose(2,1,0).flatten()
+            
+                        if temp_grid.points:
+                            temp_grid.points.foreach_set('value', temperature_data_reshaped_blender_order)
+                            temp_grid.keyframe_insert(data_path='points', frame=frame_idx)
+                        else:
+                            print(f"❌ Error: Temperature grid points collection is missing or uninitialized!")
                 else:
-                    # Reshape and transpose to Blender's Z-Y-X order
-                    temperature_data_reshaped_blender_order = temperature_data.reshape(num_x, num_y, num_z).transpose(2,1,0).flatten()
-                    temp_grid.points.foreach_set('value', temperature_data_reshaped_blender_order)
-                    temp_grid.keyframe_insert(data_path='points', frame=frame_idx)
-                    # print(f"  - Keyframed {temp_grid_name} grid for frame {frame_idx}") # Commented for less verbose output
+                    print(f"❌ Error: '{temp_grid_name}' not found in volume_grids!")
 
     else:
         print("Blender: No volume data found or 'time_steps' is empty, skipping volume creation.")
