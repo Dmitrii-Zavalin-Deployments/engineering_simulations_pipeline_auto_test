@@ -242,15 +242,16 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
         bpy.context.collection.objects.link(volume_obj)
         print(f"Blender: Created initial volume object: {volume_obj.name}")
 
-        # --- NEW: Pre-create all expected grids on the volume data block ---
-        # This ensures the Attribute Nodes in the material can find them.
-        # Initialize them as float grids. Velocity components will be individual float grids.
-        volume_blender.grids.new("density", type='FLOAT')
-        volume_blender.grids.new("temperature", type='FLOAT')
-        volume_blender.grids.new("velocity_X", type='FLOAT')
-        volume_blender.grids.new("velocity_Y", type='FLOAT')
-        volume_blender.grids.new("velocity_Z", type='FLOAT')
-        print("Blender: Pre-created volume grids on data block.")
+        # --- FIX: Use .new_grid() for creating volume grids ---
+        # Pre-create all expected grids on the volume data block.
+        # This ensures the Attribute Nodes in the material can find them by name and type.
+        print("Blender: Pre-creating volume grids on data block using new_grid()...")
+        volume_blender.grids.new_grid(name="density", type='FLOAT')
+        volume_blender.grids.new_grid(name="temperature", type='FLOAT')
+        volume_blender.grids.new_grid(name="velocity_X", type='FLOAT')
+        volume_blender.grids.new_grid(name="velocity_Y", type='FLOAT')
+        volume_blender.grids.new_grid(name="velocity_Z", type='FLOAT')
+        print("Blender: Volume grids pre-created.")
 
         # Assign a principled volume material
         if "VolumeMaterial" not in bpy.data.materials:
@@ -332,7 +333,7 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             # --- Process Density Grid ---
             density_grid_name = "density" # This name must match the Attribute Node in the material!
             if 'density_data' in frame_data:
-                # Get the already-created grid
+                # Get the already-created grid (no need to check for existence or create again)
                 density_grid = volume_blender.grids[density_grid_name]
 
                 density_grid.dimensions = (num_x, num_y, num_z)
