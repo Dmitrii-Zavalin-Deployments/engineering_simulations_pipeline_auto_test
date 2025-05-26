@@ -96,7 +96,7 @@ def convert_json_to_vtk(mesh_json_path, volume_json_path, output_vtk_dir, output
         if static_faces is not None and 'vertices' in mesh_data['time_steps'][0]:
             first_frame_vertices = np.array(mesh_data['time_steps'][0]['vertices'])
 
-            # --- FIX: Correctly format faces for pyvista.PolyData (for quads) ---
+            # Correctly format faces for pyvista.PolyData (for quads)
             # pyvista.PolyData expects a flattened array: [n_verts_0, p0_idx, p1_idx, p2_idx, p3_idx, n_verts_1, ...]
             faces_formatted_list = []
             for face in static_faces:
@@ -116,7 +116,6 @@ def convert_json_to_vtk(mesh_json_path, volume_json_path, output_vtk_dir, output
             faces_formatted = np.array(faces_formatted_list, dtype=int)
             print(f"Successfully formatted {len(static_faces)} quad faces for pyvista.")
             print(f"Length of faces_formatted array: {len(faces_formatted)}")
-            # --- END FIX ---
             
             static_mesh = pv.PolyData(first_frame_vertices, faces_formatted)
             
@@ -151,8 +150,9 @@ def convert_json_to_vtk(mesh_json_path, volume_json_path, output_vtk_dir, output
 
         # Create a base UniformGrid (ImageData) for the volume
         # pyvista.ImageData is an alias for UniformGrid and is commonly used for rectilinear, uniformly spaced data.
+        # Changed 'dims' to 'dimensions' for broader compatibility with pyvista versions.
         base_grid = pv.ImageData(
-            dims=(num_x, num_y, num_z), # Adjusted to (X, Y, Z) for pyvista dims
+            dimensions=(num_x, num_y, num_z), # Corrected keyword argument to 'dimensions'
             spacing=(dx, dy, dz),
             origin=(origin_x, origin_y, origin_z)
         )
