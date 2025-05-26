@@ -134,10 +134,7 @@ jobs:
 
       # - name: Run advanced Blender validation tests
       #   run: pytest tests/test_blender_advanced_validation.py --verbose
-
-      - name: Debug Repository Structure (Full)
-        run: ls -R "$GITHUB_WORKSPACE"
-        
+       
       - name: Commit and Push Final Blender Assembly Output to Repository
         env:
           # Ensure you have these secrets configured in your GitHub repository settings:
