@@ -293,8 +293,9 @@ def assemble_fluid_scene(fluid_mesh_data_path, fluid_volume_data_path, output_bl
             material_output.location = (300, 0)
 
             # Link nodes:
-            links.new(density_attr.outputs['Factor'], principled_volume.inputs['Density'])
-            links.new(temp_attr.outputs['Factor'], color_ramp_map_range.inputs['Value'])
+            # CORRECTED: Use 'Color' output for ShaderNodeAttribute for scalar attributes
+            links.new(density_attr.outputs['Color'], principled_volume.inputs['Density'])
+            links.new(temp_attr.outputs['Color'], color_ramp_map_range.inputs['Value'])
             links.new(color_ramp_map_range.outputs['Result'], color_ramp_colors.inputs['Fac'])
             links.new(color_ramp_colors.outputs['Color'], principled_volume.inputs['Color']) # Color for volume
             links.new(principled_volume.outputs['Volume'], material_output.inputs['Volume'])
