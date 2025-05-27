@@ -36,6 +36,25 @@ jobs:
             exit 1
           fi
 
+      - name: Delete All Previous Files in Testing-Input-Output
+        run: |
+          if [ -d "$GITHUB_WORKSPACE/data/testing-input-output/" ]; then
+            rm -rf "$GITHUB_WORKSPACE/data/testing-input-output/*"
+            echo "🗑️ Deleted all files inside data/testing-input-output/."
+          else
+            echo "ℹ️ No previous files found in data/testing-input-output/—proceeding with new generation."
+          fi
+      
+      - name: Make `download_from_dropbox.sh` Executable
+        run: chmod +x src/download_from_dropbox.sh
+  
+      - name: Download Simulation Files from Dropbox
+        env:
+          APP_KEY: ${{ secrets.APP_KEY }}
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
+        run: src/download_from_dropbox.sh
+
       - name: Run JSON to VTK Conversion
         # Execute your Python script directly using the standard Python interpreter
         run: python "$GITHUB_WORKSPACE/src/json_to_vtk.py"
@@ -46,34 +65,49 @@ jobs:
       #   # Assuming your pytest configuration looks for tests in the 'tests/' directory
       #   run: pytest tests/ --verbose
 
-      - name: Commit and Push Generated VTK Output to Repository
-        env:
-          # Ensure you have these secrets configured in your GitHub repository settings:
-          # Settings -> Secrets and variables -> Actions -> Repository secrets
-          GIT_USER_NAME: ${{ secrets.GIT_USER_NAME }}
-          GIT_USER_EMAIL: ${{ secrets.GIT_USER_EMAIL }}
+      # - name: Commit and Push Generated VTK Output to Repository
+      #   env:
+      #     # Ensure you have these secrets configured in your GitHub repository settings:
+      #     # Settings -> Secrets and variables -> Actions -> Repository secrets
+      #     GIT_USER_NAME: ${{ secrets.GIT_USER_NAME }}
+      #     GIT_USER_EMAIL: ${{ secrets.GIT_USER_EMAIL }}
+      #   run: |
+      #     git config --global user.name "${GIT_USER_NAME}"
+      #     git config --global user.email "${GIT_USER_EMAIL}"
+      
+      #     cd "$GITHUB_WORKSPACE" # Navigate to the root of your repository
+      
+      #     # Define the path to the output VTK directory
+      #     # The script saves to 'data/testing-input-output/vtk_output'
+      #     OUTPUT_VTK_DIR="data/testing-input-output/vtk_output"
+      
+      #     # Check if the output directory exists and contains files
+      #     if [ -d "${OUTPUT_VTK_DIR}" ] && [ -n "$(ls -A ${OUTPUT_VTK_DIR})" ]; then
+      #       git add "${OUTPUT_VTK_DIR}" # Stage the newly generated VTK files
+      #       git status # Display current git status for clarity in logs
+      
+      #       # Check if there are any actual changes staged to avoid creating empty commits
+      #       if [[ $(git diff --cached --quiet; echo $?) -ne 0 ]]; then
+      #         git commit -m "Auto-update: Converted fluid data to VTK format"
+      #         git push origin HEAD # Push changes to the current branch
+      #       else
+      #         echo "✅ No new VTK files or changes to commit!"
+      #       fi
+      #     else
+      #       echo "❌ No VTK output files detected in ${OUTPUT_VTK_DIR}, skipping commit."
+      #     fi
+
+      - name: Make `upload_to_dropbox.sh` Executable
+        run: chmod +x src/upload_to_dropbox.sh
+  
+      - name: Debug Before Dropbox Upload
         run: |
-          git config --global user.name "${GIT_USER_NAME}"
-          git config --global user.email "${GIT_USER_EMAIL}"
-
-          cd "$GITHUB_WORKSPACE" # Navigate to the root of your repository
-
-          # Define the path to the output VTK directory
-          # The script saves to 'data/testing-input-output/vtk_output'
-          OUTPUT_VTK_DIR="data/testing-input-output/vtk_output"
-
-          # Check if the output directory exists and contains files
-          if [ -d "${OUTPUT_VTK_DIR}" ] && [ -n "$(ls -A ${OUTPUT_VTK_DIR})" ]; then
-            git add "${OUTPUT_VTK_DIR}" # Stage the newly generated VTK files
-            git status # Display current git status for clarity in logs
-
-            # Check if there are any actual changes staged to avoid creating empty commits
-            if [[ $(git diff --cached --quiet; echo $?) -ne 0 ]]; then
-              git commit -m "Auto-update: Converted fluid data to VTK format"
-              git push origin HEAD # Push changes to the current branch
-            else
-              echo "✅ No new VTK files or changes to commit!"
-            fi
-          else
-            echo "❌ No VTK output files detected in ${OUTPUT_VTK_DIR}, skipping commit."
-          fi
+          echo "🔍 Checking directory structure before upload..."
+          ls -R $GITHUB_WORKSPACE
+  
+      - name: Upload Fluid Simulation Input to Dropbox
+        env:
+          APP_KEY: ${{ secrets.APP_KEY }}
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
+        run: src/upload_to_dropbox.sh
