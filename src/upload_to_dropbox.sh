@@ -19,7 +19,7 @@ if [ ! -d "$LOCAL_INPUT_OUTPUT_DIR" ]; then
 fi
 
 # --- Phase 1: Upload individual files directly within LOCAL_INPUT_OUTPUT_DIR ---
-# This loop handles files like fluid_mesh_data.json, fluid_particles.npy, etc.
+# This loop handles files like fluid_mesh_data.json, fluid_particles.npy, 3d_model.obj, etc.
 # It explicitly checks if the item is a file to avoid trying to upload subdirectories.
 for file in "$LOCAL_INPUT_OUTPUT_DIR"/*; do
     if [ -f "$file" ]; then # Checks if the item is a regular file
