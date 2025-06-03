@@ -85,14 +85,16 @@ if __name__ == "__main__":
 
     # Determine if the path is a file or a directory and call the appropriate upload function
     if os.path.isfile(local_path_to_upload):
-        # If it's a file, ensure the Dropbox destination path is properly formed for a file
-        # If dropbox_destination_path ends with a '/', it's a folder, so append filename.
-        # Otherwise, assume dropbox_destination_path is the full desired file path.
-        if dropbox_destination_path.endswith('/'):
-            dropbox_file_path = f"{dropbox_destination_path}{os.path.basename(local_path_to_upload)}"
-        else:
-            dropbox_file_path = dropbox_destination_path # Assume it's already the full target file path
+        # When uploading a single file, the dropbox_destination_path should always be treated as the TARGET FOLDER.
+        # We need to append the filename to create the full destination path on Dropbox.
+        # Ensure the folder path has a trailing slash for correct joining.
+        normalized_dropbox_folder = dropbox_destination_path
+        if not normalized_dropbox_folder.endswith('/'):
+            normalized_dropbox_folder += '/'
 
+        output_file_name = os.path.basename(local_path_to_upload)
+        dropbox_file_path = f"{normalized_dropbox_folder}{output_file_name}" # This is the crucial fix
+        
         print(f"Attempting to upload single file: {local_path_to_upload} to {dropbox_file_path}")
         if not upload_single_file_to_dropbox(local_path_to_upload, dropbox_file_path, refresh_token, client_id, client_secret):
             sys.exit(1) # Exit with an error code if the upload itself fails
