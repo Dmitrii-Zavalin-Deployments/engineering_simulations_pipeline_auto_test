@@ -1,4 +1,4 @@
-# conftest.py
+# tests/conftest.py
 
 import json
 import pytest
@@ -7,7 +7,12 @@ from pathlib import Path
 
 @pytest.fixture
 def sample_mesh_data():
-    """Mocked mesh JSON structure reflecting real-world turbine geometry format."""
+    """Mocked mesh JSON structure reflecting real-world turbine geometry format with multiple time steps."""
+    vertices_frame = [
+        [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [1.0, 1.0, 0.0], [0.0, 1.0, 0.0]],
+        [[0.0, 0.0, 1.0], [1.0, 0.0, 1.0], [1.0, 1.0, 1.0], [0.0, 1.0, 1.0]]
+    ]
+
     return {
         "mesh_name": "FluidSurface",
         "static_faces": [
@@ -17,14 +22,8 @@ def sample_mesh_data():
             [30, 31, 32, 33]
         ],
         "time_steps": [
-            {
-                "time": 0.01,
-                "frame": 0,
-                "vertices": [
-                    [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [1.0, 1.0, 0.0], [0.0, 1.0, 0.0]],
-                    [[0.0, 0.0, 1.0], [1.0, 0.0, 1.0], [1.0, 1.0, 1.0], [0.0, 1.0, 1.0]]
-                ]
-            }
+            {"time": 0.01, "frame": 0, "vertices": vertices_frame},
+            {"time": 0.02, "frame": 1, "vertices": vertices_frame}
         ]
     }
 
