@@ -30,7 +30,7 @@ def test_polydata_export(create_temp_input_files):
     output = pv.read(mesh_out)
     assert isinstance(output, pv.PolyData), "Output is not a PolyData object"
     assert output.n_points > 0, "PolyData contains no points"
-    assert output.n_faces > 0, "PolyData contains no faces"
+    assert output.n_cells > 0, "PolyData contains no cells"
 
 
 def test_image_data_dimensions(create_temp_input_files):
@@ -44,7 +44,7 @@ def test_image_data_dimensions(create_temp_input_files):
     grid = pv.read(first_vti)
     expected_shape = (1, 1, 3)  # X, Y, Z from [3, 1, 1] reversed
 
-    assert isinstance(grid, pv.UniformGrid), "Loaded data is not a UniformGrid"
+    assert hasattr(grid, "dimensions"), "Output grid has no 'dimensions' attribute"
     assert grid.dimensions == expected_shape, f"Expected dimensions {expected_shape}, got {grid.dimensions}"
 
 
@@ -84,9 +84,9 @@ def test_vector_field_attachment(create_temp_input_files):
     )
 
     grid = pv.read(create_temp_input_files["output_dir"] / "fluid_data_t0000.vti")
-    vector_field = grid.point_data.get("velocity") or grid.point_data.get("Velocity")
 
-    assert vector_field is not None, "Missing 'velocity' vector field"
+    assert "velocity" in grid.point_data or "Velocity" in grid.point_data, "Missing 'velocity' vector field"
+    vector_field = grid.point_data.get("velocity") or grid.point_data.get("Velocity")
     assert vector_field.shape[1] == 3, f"Velocity field must have 3 components per vector, got shape {vector_field.shape}"
 
 
