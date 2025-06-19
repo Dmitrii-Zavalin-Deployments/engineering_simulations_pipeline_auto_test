@@ -59,11 +59,8 @@ jobs:
         # Execute your Python script directly using the standard Python interpreter
         run: python "$GITHUB_WORKSPACE/src/json_to_vtk.py"
 
-      # --- Execute Unit & Integration Tests ---
-      # # Uncomment and adjust these as needed for your specific tests.
-      # - name: Run tests
-      #   # Assuming your pytest configuration looks for tests in the 'tests/' directory
-      #   run: pytest tests/ --verbose
+      - name: Run tests
+        run: pytest tests/ --verbose
 
       # - name: Commit and Push Generated VTK Output to Repository
       #   env:
