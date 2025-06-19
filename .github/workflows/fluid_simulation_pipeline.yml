@@ -25,6 +25,12 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r requirements.txt
 
+      - name: Force Upgrade PyVista (ensure ≥0.35.0)
+        run: pip install --upgrade --force-reinstall "pyvista>=0.35.0"
+
+      - name: Verify PyVista Version
+        run: python -c "import pyvista; print('✅ PyVista version:', pyvista.__version__)"
+
       - name: Debug Repository Structure
         run: ls -R "$GITHUB_WORKSPACE"
 
