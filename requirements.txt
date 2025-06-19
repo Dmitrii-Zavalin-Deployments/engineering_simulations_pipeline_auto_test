@@ -2,7 +2,7 @@ numpy
 h5py
 scipy
 pytest
-pyvista
+pyvista>=0.35.0
 dropbox
 
 
