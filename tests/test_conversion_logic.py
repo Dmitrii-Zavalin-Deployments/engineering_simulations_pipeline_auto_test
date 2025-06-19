@@ -85,8 +85,11 @@ def test_vector_field_attachment(create_temp_input_files):
 
     grid = pv.read(create_temp_input_files["output_dir"] / "fluid_data_t0000.vti")
 
-    assert "velocity" in grid.point_data or "Velocity" in grid.point_data, "Missing 'velocity' vector field"
-    vector_field = grid.point_data.get("velocity") or grid.point_data.get("Velocity")
+    vector_field = grid.point_data.get("velocity")
+    if vector_field is None:
+        vector_field = grid.point_data.get("Velocity")
+
+    assert vector_field is not None, "Missing 'velocity' vector field"
     assert vector_field.shape[1] == 3, f"Velocity field must have 3 components per vector, got shape {vector_field.shape}"
 
 
