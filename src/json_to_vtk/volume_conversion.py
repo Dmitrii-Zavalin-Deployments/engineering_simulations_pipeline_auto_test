@@ -3,49 +3,51 @@
 from pathlib import Path
 import json
 import numpy as np
-from pyvista import UniformGrid
 import pyvista as pv
+import vtk
 
 
 def convert_volume_series(json_path: Path, output_dir: Path) -> None:
     """
-    Converts a JSON file with volumetric fluid data into a series of .vti files (one per timestep).
-
-    Parameters:
-        json_path (Path): Path to the fluid_volume_data.json input file.
-        output_dir (Path): Directory where the .vti files will be saved.
+    Converts a volumetric fluid JSON file to a series of .vti files (one per timestep)
+    without using pyvista.UniformGrid.
     """
     with open(json_path, "r", encoding="utf-8") as f:
         volume_data = json.load(f)
 
     grid_info = volume_data["grid_info"]
-    dimensions = tuple(reversed(grid_info["dimensions"]))  # Convert from [Z, Y, X] to (X, Y, Z)
-    spacing = tuple(grid_info["voxel_size"])
-    origin = tuple(grid_info["origin"])
+    z, y, x = grid_info["dimensions"]
+    dx, dy, dz = grid_info["voxel_size"]
+    ox, oy, oz = grid_info["origin"]
 
-    base_grid = UniformGrid()
-    base_grid.dimensions = dimensions
-    base_grid.spacing = spacing
-    base_grid.origin = origin
+    dimensions = (x, y, z)
+    spacing = (dx, dy, dz)
+    origin = (ox, oy, oz)
+
+    n_points = x * y * z
 
     for i, timestep in enumerate(volume_data["time_steps"]):
-        grid = base_grid.copy()
+        # Create vtkImageData directly
+        image = vtk.vtkImageData()
+        image.SetDimensions(x, y, z)
+        image.SetSpacing(spacing)
+        image.SetOrigin(origin)
 
-        # Convert scalar fields
+        grid = pv.wrap(image)
+
+        # Attach scalar fields
         for field in ("density_data", "temperature_data"):
             raw = timestep[field]
-            array = np.array(raw, dtype=float)
-            reshaped = array.reshape(dimensions[::-1])  # shape back to [Z, Y, X]
-            grid.point_data[field.replace("_data", "")] = reshaped.flatten(order="C")
+            scalar = np.array(raw, dtype=np.float32).reshape((z, y, x))
+            grid.point_data[field.replace("_data", "")] = scalar.ravel(order="C")
 
-        # Convert velocity vectors
-        velocity_raw = np.array(timestep["velocity_data"], dtype=float)
-        velocity = velocity_raw.reshape((-1, 3))
-        grid.point_data["velocity"] = velocity
+        # Attach velocity vector field
+        velocity_raw = np.array(timestep["velocity_data"], dtype=np.float32)
+        if velocity_raw.shape != (n_points, 3):
+            raise ValueError(f"Velocity data shape mismatch: expected ({n_points}, 3), got {velocity_raw.shape}")
+        grid.point_data["velocity"] = velocity_raw
 
-        # Export file
-        frame_str = f"{i:04d}"
-        output_file = output_dir / f"fluid_data_t{frame_str}.vti"
+        output_file = output_dir / f"fluid_data_t{i:04d}.vti"
         grid.save(str(output_file))
 
 
