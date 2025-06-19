@@ -3,6 +3,7 @@
 from pathlib import Path
 import json
 import numpy as np
+from pyvista import UniformGrid
 import pyvista as pv
 
 
@@ -14,7 +15,7 @@ def convert_volume_series(json_path: Path, output_dir: Path) -> None:
         json_path (Path): Path to the fluid_volume_data.json input file.
         output_dir (Path): Directory where the .vti files will be saved.
     """
-    with open(json_path, "r") as f:
+    with open(json_path, "r", encoding="utf-8") as f:
         volume_data = json.load(f)
 
     grid_info = volume_data["grid_info"]
@@ -22,7 +23,7 @@ def convert_volume_series(json_path: Path, output_dir: Path) -> None:
     spacing = tuple(grid_info["voxel_size"])
     origin = tuple(grid_info["origin"])
 
-    base_grid = pv.UniformGrid()
+    base_grid = UniformGrid()
     base_grid.dimensions = dimensions
     base_grid.spacing = spacing
     base_grid.origin = origin
@@ -34,18 +35,18 @@ def convert_volume_series(json_path: Path, output_dir: Path) -> None:
         for field in ("density_data", "temperature_data"):
             raw = timestep[field]
             array = np.array(raw, dtype=float)
-            reshaped = array.reshape(dimensions[::-1])  # back to [Z, Y, X]
+            reshaped = array.reshape(dimensions[::-1])  # shape back to [Z, Y, X]
             grid.point_data[field.replace("_data", "")] = reshaped.flatten(order="C")
 
         # Convert velocity vectors
         velocity_raw = np.array(timestep["velocity_data"], dtype=float)
-        velocity = velocity_raw.reshape((-1, 3))  # already 3D vectors
+        velocity = velocity_raw.reshape((-1, 3))
         grid.point_data["velocity"] = velocity
 
         # Export file
         frame_str = f"{i:04d}"
         output_file = output_dir / f"fluid_data_t{frame_str}.vti"
-        grid.save(output_file)
+        grid.save(str(output_file))
 
 
 
