@@ -22,20 +22,25 @@ def convert_static_mesh(json_path: Path, output_path: Path) -> None:
     if not time_steps:
         raise ValueError("No time_steps found in mesh JSON.")
 
-    vertex_groups = time_steps[0].get("vertices", [])
-    vertices = []
+    # Load vertices from first time step
+    vertex_data = time_steps[0].get("vertices", [])
 
-    try:
-        for group in vertex_groups:
-            if isinstance(group, list) and all(isinstance(coord, (list, tuple)) and len(coord) == 3 for coord in group):
-                vertices.extend(tuple(coord) for coord in group)
-            else:
-                raise TypeError(f"Invalid vertex structure in group: {group}")
-    except Exception as e:
-        raise ValueError(f"Error parsing vertex groups: {e}")
+    # Flatten: support both [[[], [], []], ...] and [[], [], []] structures
+    if all(isinstance(entry, (list, tuple)) and len(entry) == 3 for entry in vertex_data):
+        vertices = [tuple(coord) for coord in vertex_data]
+    else:
+        # Assume list of layers/groups of vertices
+        vertices = []
+        for group in vertex_data:
+            if not isinstance(group, list):
+                raise ValueError(f"Invalid vertex group: {group}")
+            for coord in group:
+                if not isinstance(coord, (list, tuple)) or len(coord) != 3:
+                    raise ValueError(f"Invalid vertex coordinate: {coord}")
+                vertices.append(tuple(coord))
 
     if not vertices:
-        raise ValueError("No valid vertices extracted from JSON input.")
+        raise ValueError("No valid vertices found in mesh.")
 
     # Prepare faces for PyVista: [n_pts, i1, i2, ..., n_pts, j1, j2, ...]
     formatted_faces = []
@@ -45,8 +50,8 @@ def convert_static_mesh(json_path: Path, output_path: Path) -> None:
 
     points = np.array(vertices, dtype=float)
     cells = np.array(formatted_faces, dtype=int)
-    mesh = pv.PolyData(points, cells)
 
+    mesh = pv.PolyData(points, cells)
     mesh.save(str(output_path))
 
 
