@@ -1,6 +1,14 @@
-# test_json_structure.py
+# tests/test_json_structure.py
 
 import pytest
+import sys
+from pathlib import Path
+
+# Optional: Add src/ to the import path (good for future extensions)
+project_root = Path(__file__).resolve().parents[1]
+src_path = project_root / "src"
+if str(src_path) not in sys.path:
+    sys.path.insert(0, str(src_path))
 
 
 def test_mesh_json_structure(sample_mesh_data):

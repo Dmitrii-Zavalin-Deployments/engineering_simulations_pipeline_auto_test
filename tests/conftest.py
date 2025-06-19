@@ -3,6 +3,13 @@
 import json
 import pytest
 from pathlib import Path
+import sys
+import os
+
+# Ensure `src/` is in sys.path so we can import json_to_vtk modules
+project_root = Path(__file__).resolve().parents[1]
+src_path = project_root / "src"
+sys.path.insert(0, str(src_path))
 
 
 @pytest.fixture
