@@ -43,7 +43,7 @@ jobs:
             echo "🧹 Cleaned existing files in $TARGET"
           fi
 
-      - name: Make `download_from_dropbox.sh` Executable
+      - name: Make download_from_dropbox.sh Executable
         run: chmod +x src/download_from_dropbox.sh
 
       - name: Download Simulation Files from Dropbox
@@ -55,6 +55,7 @@ jobs:
 
       - name: Run JSON to VTK Conversion via CLI
         run: |
+          PYTHONPATH=src \
           python -m json_to_vtk.cli \
             --mesh data/testing-input-output/fluid_mesh_data.json \
             --volume data/testing-input-output/fluid_volume_data.json \
@@ -62,9 +63,8 @@ jobs:
             --write-pvd
 
       - name: Run tests
-        run: pytest tests/ --verbose
+        run: PYTHONPATH=src pytest tests/ --verbose
 
-      # Optional: Auto-commit generated outputs
       # - name: Commit and Push Generated VTK Output to Repository
       #   env:
       #     GIT_USER_NAME: ${{ secrets.GIT_USER_NAME }}
@@ -85,9 +85,8 @@ jobs:
       #       fi
       #     else
       #       echo "❌ No VTK output files found to commit."
-      #     fi
 
-      - name: Make `upload_to_dropbox.sh` Executable
+      - name: Make upload_to_dropbox.sh Executable
         run: chmod +x src/upload_to_dropbox.sh
 
       - name: Debug Before Dropbox Upload
