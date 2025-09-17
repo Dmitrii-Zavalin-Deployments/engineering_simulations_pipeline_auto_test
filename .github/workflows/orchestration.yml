@@ -68,21 +68,24 @@ jobs:
 
           # Ensure README starts with disable instructions (only once)
           if ! grep -q "🛑 To temporarily disable the orchestrator workflow:" README.md; then
-            echo "# engineering_simulations_pipeline_auto_test" > README.md
-            echo "" >> README.md
-            echo "🛑 To temporarily disable the orchestrator workflow:" >> README.md
-            echo "1. Go to your GitHub repository." >> README.md
-            echo "2. Click the **Actions** tab." >> README.md
-            echo "3. Select the **Orchestrator** workflow from the left sidebar." >> README.md
-            echo "4. Click the **Disable workflow** button near the top-right." >> README.md
-            echo "" >> README.md
-            echo "🔄 To start a new simulation run later:" >> README.md
-            echo "1. Re-enable the workflow from the same Actions tab." >> README.md
-            echo "2. Upload new input files to Dropbox." >> README.md
-            echo "3. Wait for the next scheduled run or trigger manually." >> README.md
-            echo "" >> README.md
-            echo "| Timestamp | Density | Viscosity | Initial Pressure | Initial Velocity |" >> README.md
-            echo "|-----------|---------|-----------|------------------|-------------------|" >> README.md
+            {
+              echo "# engineering_simulations_pipeline_auto_test"
+              echo ""
+              echo "🛑 To temporarily disable the orchestrator workflow:"
+              echo "1. Go to your GitHub repository."
+              echo "2. Click the **Actions** tab."
+              echo "3. Select the **Orchestrator** workflow from the left sidebar."
+              echo "4. Click the **Disable workflow** button near the top-right."
+              echo ""
+              echo "🔄 To start a new simulation run later:"
+              echo "1. Re-enable the workflow from the same Actions tab."
+              echo "2. Upload new input files to Dropbox."
+              echo "3. Wait for the next scheduled run or trigger manually."
+              echo ""
+              echo "## Simulation Run History"
+              echo "| Timestamp | Density | Viscosity | Initial Pressure | Initial Velocity |"
+              echo "|-----------|---------|-----------|------------------|-------------------|"
+            } > README.md
           fi
 
           echo "| $TIMESTAMP | $DENSITY | $VISCOSITY | $PRESSURE | [$VELOCITY] |" >> README.md
