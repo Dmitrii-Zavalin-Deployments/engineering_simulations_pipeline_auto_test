@@ -26,21 +26,27 @@ jobs:
       - name: Make Dropbox Script Executable
         run: chmod +x src/download_from_dropbox.sh
 
-      - name: Download Files, Inject Parameters, and Clean Up
+      - name: Download Files, Clean Directory, and Inject Parameters
         env:
           APP_KEY: ${{ secrets.APP_KEY }}
           APP_SECRET: ${{ secrets.APP_SECRET }}
           REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
         run: |
+          echo "📥 Starting Dropbox download..."
           src/download_from_dropbox.sh
 
-          # Delete all files except .step and flow_data.json
-          find data/testing-input-output -type f ! -name '*.step' ! -name 'flow_data.json' -delete
+          echo "🧹 Cleaning directory: removing all files except .step and flow_data.json..."
+          find data/testing-input-output -type f ! -name '*.step' ! -name 'flow_data.json' -exec rm -v {} +
 
-          # Inject randomized values into flow_data.json
-          python3 <<EOF
-          import json, random
+          echo "🔧 Injecting randomized parameters into flow_data.json..."
+          python3 - <<EOF
+          import json, random, os
+
           path = "data/testing-input-output/flow_data.json"
+          if not os.path.exists(path):
+              print("❌ flow_data.json not found. Skipping injection.")
+              exit(1)
+
           with open(path) as f:
               data = json.load(f)
 
@@ -51,6 +57,10 @@ jobs:
 
           with open(path, "w") as f:
               json.dump(data, f, indent=2)
+
+          print("✅ Injection complete. New values:")
+          print(json.dumps(data["fluid_properties"], indent=2))
+          print(json.dumps(data["initial_conditions"], indent=2))
           EOF
 
       - name: Append Run Log to README
