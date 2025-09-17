@@ -1,0 +1,160 @@
+name: Orchestrator
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"  # Runs every 5 minutes
+  workflow_dispatch:  # Allows manual trigger
+
+jobs:
+  orchestrate-simulation:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+
+      - name: Check Orchestration Flag from Config
+        id: flag_check
+        run: |
+          ENABLED=$(jq -r '.enabled' config/orchestrator_config.json)
+          echo "enabled=$ENABLED" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Install Dependencies
+        if: steps.flag_check.outputs.enabled == 'true'
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Make Dropbox Script Executable
+        if: steps.flag_check.outputs.enabled == 'true'
+        run: chmod +x src/download_from_dropbox.sh
+
+      - name: Download Files from Dropbox
+        if: steps.flag_check.outputs.enabled == 'true'
+        env:
+          APP_KEY: ${{ secrets.APP_KEY }}
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
+        run: src/download_from_dropbox.sh
+
+      - name: 🔒 Disable orchestrator and update README
+        if: steps.flag_check.outputs.enabled == 'true'
+        env:
+          GIT_USER_NAME: ${{ secrets.GIT_USER_NAME }}
+          GIT_USER_EMAIL: ${{ secrets.GIT_USER_EMAIL }}
+        run: |
+          # Configure Git
+          git config --global user.name "${GIT_USER_NAME}"
+          git config --global user.email "${GIT_USER_EMAIL}"
+
+          # Stash any local changes to avoid rebase conflict
+          git stash --include-untracked || echo "⚠️ Nothing to stash"
+
+          # Pull latest changes safely
+          git pull --rebase origin main || echo "⚠️ Pull failed or not needed"
+
+          # Restore stashed changes
+          git stash pop || echo "⚠️ Nothing to pop"
+
+          TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+
+          # Update orchestrator_config.json
+          echo '{ "enabled": false }' > config/orchestrator_config.json
+
+          # Update README.md with timestamped log
+          echo "# engineering_simulations_pipeline_autorun" > README.md
+          echo "" >> README.md
+          echo "🕒 The orchestrator_config.json flag was updated from true to false on $TIMESTAMP by '${{ github.actor }}' via '${{ github.event_name }}'." >> README.md
+          echo "" >> README.md
+          echo "✅ Your simulation run is complete. The orchestrator has been disabled to prevent blank or repeated runs." >> README.md
+          echo "" >> README.md
+          echo "🛑 To temporarily disable the orchestrator workflow:" >> README.md
+          echo "1. Go to your GitHub repository." >> README.md
+          echo "2. Click the **Actions** tab." >> README.md
+          echo "3. Select the **Orchestrator** workflow from the left sidebar." >> README.md
+          echo "4. Click the **Disable workflow** button near the top-right." >> README.md
+          echo "" >> README.md
+          echo "🔄 To start a new simulation run later:" >> README.md
+          echo "1. Open `config/orchestrator_config.json` and change `"enabled": false` to `"enabled": true`." >> README.md
+          echo "2. Commit and push your changes." >> README.md
+          echo "3. Go to the **Actions** tab → **Orchestrator** workflow." >> README.md
+          echo "4. Click **Enable workflow** to reactivate it." >> README.md
+
+          # Commit and push changes
+          git add config/orchestrator_config.json README.md
+          git commit -m "Disable orchestrator and log update on $TIMESTAMP"
+          git push origin main
+
+      - name: Trigger Downstream Workflows via GitHub API
+        if: steps.flag_check.outputs.enabled == 'true'
+        env:
+          GIT_PAT: ${{ secrets.GIT_PAT }}
+        run: |
+          INPUT_DIR="data/testing-input-output"
+          TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
+
+          trigger_workflow() {
+            REPO="$1"
+            WORKFLOW_FILE="$2"
+            echo "🚀 Dispatching $WORKFLOW_FILE in $REPO"
+
+            curl -X POST \
+              -H "Authorization: token $GIT_PAT" \
+              -H "Accept: application/vnd.github.v3+json" \
+              https://api.github.com/repos/$REPO/actions/workflows/$WORKFLOW_FILE/dispatches \
+              -d '{"ref":"main"}'
+          }
+
+          # Domain Grid Trigger
+          if ls "$INPUT_DIR"/*.step &>/dev/null && [ -f "$INPUT_DIR/flow_data.json" ] && [ ! -f "$INPUT_DIR/enriched_metadata.json" ]; then
+            trigger_workflow "Dmitrii-Zavalin-Deployments/engineering_simulations_pipeline_domain_grid_sred" "fluid_simulation_pipeline.yml"
+          else
+            echo "ℹ️ Skipped Domain Grid Trigger: 'enriched_metadata.json' already exists."
+            echo "📝 To regenerate it, delete in Dropbox 'engineering_simulations_pipeline/enriched_metadata.json' and rerun the orchestrator. See README.md in the domain grid repository for details."
+          fi
+
+          # Boundary Mapping Trigger
+          if ls "$INPUT_DIR"/*.step &>/dev/null && [ -f "$INPUT_DIR/flow_data.json" ] && [ ! -f "$INPUT_DIR/boundary_conditions_gmsh.json" ]; then
+            trigger_workflow "Dmitrii-Zavalin-Deployments/engineering_simulations_pipeline_boundary_mapping_sred" "boundary_conditions_workflow.yml"
+          else
+            echo "ℹ️ Skipped Boundary Mapping Trigger: 'boundary_conditions_gmsh.json' already exists."
+            echo "📝 To regenerate it, delete in Dropbox 'engineering_simulations_pipeline/boundary_conditions_gmsh.json' and rerun the orchestrator. See README.md in the boundary mapping repository for details."
+          fi
+
+          # Geometry Masking Trigger
+          if ls "$INPUT_DIR"/*.step &>/dev/null && [ -f "$INPUT_DIR/flow_data.json" ] && [ ! -f "$INPUT_DIR/geometry_masking_gmsh.json" ]; then
+            trigger_workflow "Dmitrii-Zavalin-Deployments/engineering_simulations_pipeline_geometry_masking_sred" "geometry_masking_workflow.yml"
+          else
+            echo "ℹ️ Skipped Geometry Masking Trigger: 'geometry_masking_gmsh.json' already exists."
+            echo "📝 To regenerate it, delete in Dropbox 'engineering_simulations_pipeline/geometry_masking_gmsh.json' and rerun the orchestrator. See README.md in the geometry masking repository for details."
+          fi
+
+          # Input Builder Trigger
+          if [ -f "$INPUT_DIR/enriched_metadata.json" ] && \
+            [ -f "$INPUT_DIR/boundary_conditions_gmsh.json" ] && \
+            [ -f "$INPUT_DIR/geometry_masking_gmsh.json" ] && \
+            [ ! -f "$INPUT_DIR/fluid_simulation_input.json" ]; then
+            trigger_workflow "Dmitrii-Zavalin-Deployments/engineering_simulations_pipeline_input_builder_sred" "fluid_simulation_pipeline.yml"
+          else
+            echo "ℹ️ Skipped Input Builder Trigger: 'fluid_simulation_input.json' already exists."
+            echo "📝 To regenerate it, delete in Dropbox 'engineering_simulations_pipeline/fluid_simulation_input.json' and rerun the orchestrator. See README.md in the input builder repository for details."
+          fi
+
+          # Fluid Dynamics Solver Trigger
+          if [ -f "$INPUT_DIR/fluid_simulation_input.json" ] && \
+            [ ! -f "$INPUT_DIR/navier_stokes_output.zip" ]; then
+            trigger_workflow "Dmitrii-Zavalin-Deployments/engineering_simulations_pipeline_fluid_dynamics_solver_sred" "fluid_dynamics_calculations.yml"
+          else
+            echo "ℹ️ Skipped Fluid Dynamics Solver Trigger: 'navier_stokes_output.zip' already exists."
+            echo "📝 To regenerate it, delete in Dropbox 'engineering_simulations_pipeline/navier_stokes_output.zip' and rerun the orchestrator. See README.md in the fluid solver repository for details."
+          fi
+
+
+
+

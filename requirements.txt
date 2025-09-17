@@ -1,8 +1,5 @@
-numpy
-h5py
-scipy
 pytest
-pyvista==0.45.2
 dropbox
+
 
 
