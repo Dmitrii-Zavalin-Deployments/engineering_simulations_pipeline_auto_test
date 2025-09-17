@@ -26,17 +26,14 @@ jobs:
       - name: Make Dropbox Script Executable
         run: chmod +x src/download_from_dropbox.sh
 
-      - name: Download Files, Clean Directory, and Inject Parameters
+      - name: Download, Inject Parameters, and Upload to Dropbox
         env:
           APP_KEY: ${{ secrets.APP_KEY }}
           APP_SECRET: ${{ secrets.APP_SECRET }}
           REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
         run: |
-          echo "📥 Starting Dropbox download..."
+          echo "📥 Starting Dropbox download and cleanup..."
           src/download_from_dropbox.sh
-
-          echo "🧹 Cleaning directory: removing all files except .step and flow_data.json..."
-          find data/testing-input-output -type f ! -name '*.step' ! -name 'flow_data.json' -exec rm -v {} +
 
           echo "🔧 Injecting randomized parameters into flow_data.json..."
           python3 - <<EOF
@@ -62,6 +59,9 @@ jobs:
           print(json.dumps(data["fluid_properties"], indent=2))
           print(json.dumps(data["initial_conditions"], indent=2))
           EOF
+
+          echo "📤 Uploading updated files to Dropbox..."
+          src/upload_to_dropbox.sh
 
       - name: Append Run Log to README
         env:
