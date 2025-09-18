@@ -34,6 +34,9 @@ jobs:
           APP_SECRET: ${{ secrets.APP_SECRET }}
           REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
         run: |
+          echo "🧹 Cleaning local folder: removing all files except .step and flow_data.json..."
+          find data/testing-input-output -type f ! -name '*.step' ! -name 'flow_data.json' -exec rm -v {} +
+
           echo "📥 Starting Dropbox download and cleanup..."
           src/download_from_dropbox.sh
 
@@ -170,6 +173,5 @@ jobs:
             echo "ℹ️ Skipped Fluid Dynamics Solver Trigger: 'navier_stokes_output.zip' already exists."
             echo "📝 To regenerate it, delete in Dropbox 'engineering_simulations_pipeline/navier_stokes_output.zip' and rerun the orchestrator. See README.md in the fluid solver repository for details."
           fi
-
 
 
