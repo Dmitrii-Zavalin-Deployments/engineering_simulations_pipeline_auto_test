@@ -23,8 +23,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Make Dropbox Script Executable
-        run: chmod +x src/download_from_dropbox.sh
+      - name: Make Dropbox Scripts Executable
+        run: |
+          chmod +x src/download_from_dropbox.sh
+          chmod +x src/upload_to_dropbox.sh
 
       - name: Download, Inject Parameters, and Upload to Dropbox
         env:
