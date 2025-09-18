@@ -34,8 +34,8 @@ jobs:
           APP_SECRET: ${{ secrets.APP_SECRET }}
           REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
         run: |
-          echo "🧹 Cleaning local folder: removing all files except .step and flow_data.json..."
-          find data/testing-input-output -type f ! -name '*.step' ! -name 'flow_data.json' -exec rm -v {} +
+          echo "📥 Downloading files from Dropbox..."
+          src/download_from_dropbox.sh false
 
           DELETE_FLAG="false"
           if [ -f "data/testing-input-output/navier_stokes_output.zip" ]; then
@@ -43,8 +43,15 @@ jobs:
             DELETE_FLAG="true"
           fi
 
-          echo "📥 Starting Dropbox download with DELETE_FLAG=$DELETE_FLAG"
-          src/download_from_dropbox.sh "$DELETE_FLAG"
+          echo "🧹 Cleaning local folder: removing all files except .step and flow_data.json..."
+          find data/testing-input-output -type f ! -name '*.step' ! -name 'flow_data.json' -exec rm -v {} +
+
+          if [ "$DELETE_FLAG" == "true" ]; then
+            echo "🧹 Cleaning Dropbox folder: deleting all files except .step and flow_data.json..."
+            python3 src/download_dropbox_files.py delete "/engineering_simulations_pipeline" "$REFRESH_TOKEN" "$APP_KEY" "$APP_SECRET" "./dropbox_download_log.txt"
+          else
+            echo "🚫 Skipping Dropbox deletion (DELETE_FLAG=false)"
+          fi
 
           if [ "$DELETE_FLAG" == "true" ]; then
             echo "🔧 Injecting randomized parameters into flow_data.json..."
