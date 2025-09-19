@@ -135,10 +135,13 @@ jobs:
           fi
 
           # Boundary Mapping Trigger
-          if ls "$INPUT_DIR"/*.step &>/dev/null && [ -f "$INPUT_DIR/flow_data.json" ] && [ ! -f "$INPUT_DIR/boundary_conditions_gmsh.json" ]; then
+          if ls "$INPUT_DIR"/*.step &>/dev/null && \
+            [ -f "$INPUT_DIR/flow_data.json" ] && \
+            [ -f "$INPUT_DIR/enriched_metadata.json" ] && \
+            [ ! -f "$INPUT_DIR/boundary_conditions_gmsh.json" ]; then
             trigger_workflow "Dmitrii-Zavalin-Deployments/engineering_simulations_pipeline_boundary_mapping_sred" "boundary_conditions_workflow.yml"
           else
-            echo "ℹ️ Skipped Boundary Mapping Trigger: 'boundary_conditions_gmsh.json' already exists."
+            echo "ℹ️ Skipped Boundary Mapping Trigger: 'boundary_conditions_gmsh.json' already exists or 'enriched_metadata.json' is missing."
             echo "📝 To regenerate it, delete in Dropbox 'engineering_simulations_pipeline/boundary_conditions_gmsh.json' and rerun the orchestrator. See README.md in the boundary mapping repository for details."
           fi
 
