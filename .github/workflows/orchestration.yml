@@ -134,6 +134,14 @@ jobs:
             echo "📝 To regenerate it, delete in Dropbox 'engineering_simulations_pipeline/enriched_metadata.json' and rerun the orchestrator. See README.md in the domain grid repository for details."
           fi
 
+          # Run resolution sweep script only if enriched_metadata.json exists
+          if [ -f "$INPUT_DIR/enriched_metadata.json" ]; then
+            echo "📊 Running resolution_sweep.py to compute and inject resolution advice..."
+            python3 src/resolution_sweep.py
+          else
+            echo "🚫 Skipping resolution_sweep.py: enriched_metadata.json not found."
+          fi
+
           # Boundary Mapping Trigger
           if ls "$INPUT_DIR"/*.step &>/dev/null && \
             [ -f "$INPUT_DIR/flow_data.json" ] && \
