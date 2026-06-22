@@ -4,26 +4,36 @@
   "type": "array",
   "items": {
     "type": "object",
-    "required": ["order", "repo_url", "version_tag", "config_ids"],
+    "required": [
+      "order", 
+      "repository_url", 
+      "version_tag", 
+      "config_ids", 
+      "setup_script"
+    ],
     "properties": {
       "order": {
         "type": "integer",
-        "description": "The sequence of execution (1, 2, 3...)."
+        "description": "The number in the sequence of execution."
       },
-      "repo_url": {
+      "repository_url": {
         "type": "string",
-        "description": "The Git URL for the simulator."
+        "description": "The full Git URL for the simulator repository."
       },
       "version_tag": {
         "type": "string",
-        "description": "Git branch or tag to checkout."
+        "description": "Git branch, tag, or commit hash to checkout."
       },
       "config_ids": {
         "type": "array",
         "items": {
           "type": "string"
         },
-        "description": "List of config files to run for this step."
+        "description": "List of config files (from the library configs/ folder) to run for this step."
+      },
+      "setup_script": {
+        "type": "string",
+        "description": "The path to the shell script within this Library repository that provisions the environment (e.g., 'setup_scripts/mesh_generator_setup.sh')."
       }
     }
   }
