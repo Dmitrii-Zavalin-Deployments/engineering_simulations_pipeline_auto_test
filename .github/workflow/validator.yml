@@ -1,0 +1,42 @@
+name: Governance Validator
+
+on:
+  push:
+    branches:
+      - "**"
+  workflow_dispatch:
+
+jobs:
+  validation_check:
+    name: "🧪 Pre-Flight: Schema & Range Governance"
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🗂️ Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: 📦 Install Test Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest jsonschema
+
+      - name: 🧪 Run Governance Validation
+        run: |
+          echo "🚀 Initiating: Governance Validation Suite"
+          pytest tests/test_governance_validation.py -vv
+
+      - name: 🏁 Validation Summary
+        if: always()
+        run: |
+          if [[ "${{ job.status }}" == "success" ]]; then
+            echo "✅ Governance Check Passed: All schemas and range configs are compliant."
+          else
+            echo "❌ Governance Check Failed: Please review the validator output above."
+            exit 1
+          fi
