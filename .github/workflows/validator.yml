@@ -29,7 +29,7 @@ jobs:
       - name: 🧪 Run Governance Validation
         run: |
           echo "🚀 Initiating: Governance Validation Suite"
-          pytest tests/test_governance_validation.py -vv
+          pytest tests/test_governance_validation.py -vv -s
 
       - name: 🏁 Validation Summary
         if: always()
