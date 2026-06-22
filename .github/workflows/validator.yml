@@ -29,7 +29,9 @@ jobs:
       - name: 🧪 Run Governance Validation
         run: |
           echo "🚀 Initiating: Governance Validation Suite"
-          pytest tests/test_governance_validation.py -vv -s
+          # -s: Disable capturing
+          # --log-cli-level=INFO: Force the logger to print to the console
+          pytest tests/test_governance_validation.py -vv -s --log-cli-level=INFO
 
       - name: 🏁 Validation Summary
         if: always()
