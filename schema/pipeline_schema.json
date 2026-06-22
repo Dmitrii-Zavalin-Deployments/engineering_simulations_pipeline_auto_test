@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Pipeline Execution Manifest",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["order", "repo_url", "version_tag", "config_ids"],
+    "properties": {
+      "order": {
+        "type": "integer",
+        "description": "The sequence of execution (1, 2, 3...)."
+      },
+      "repo_url": {
+        "type": "string",
+        "description": "The Git URL for the simulator."
+      },
+      "version_tag": {
+        "type": "string",
+        "description": "Git branch or tag to checkout."
+      },
+      "config_ids": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "List of config files to run for this step."
+      }
+    }
+  }
+}
