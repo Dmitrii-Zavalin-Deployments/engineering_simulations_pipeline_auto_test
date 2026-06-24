@@ -60,23 +60,23 @@ jobs:
             if [ -d "$dir" ]; then
               for file in "$dir"/*; do
                 if [ -f "$file" ]; then
-                  # Get the short hash of the last commit that changed this file
-                  COMMIT_HASH=$(git log -n 1 --pretty=format:%h -- "$file")
+                  # Generate a hash based purely on the FILE CONTENT (7 characters)
+                  CONTENT_HASH=$(git hash-object "$file" | cut -c1-7)
                   
                   # Extract extension and base name
                   ext="${file##*.}"
                   filename=$(basename "$file")
                   base="${filename%.*}"
                   
-                  # Logic: If the file already contains the hash, skip
-                  if [[ "$base" == *"_$COMMIT_HASH" ]]; then
-                    echo "✅ File $filename is already versioned with $COMMIT_HASH. Skipping."
+                  # Logic: If the file already contains the hash, skip renaming
+                  if [[ "$base" == *"_$CONTENT_HASH" ]]; then
+                    echo "✅ File $filename is already versioned correctly ($CONTENT_HASH). Skipping."
                     continue
                   fi
                   
-                  # Remove old hash suffix if it exists (assuming format name_hash.ext)
+                  # Remove any old hash suffix (strips _[a-f0-9]+ from the end of the base name)
                   new_base=$(echo "$base" | sed -E 's/_[a-f0-9]+$//')
-                  new_filename="${new_base}_${COMMIT_HASH}.${ext}"
+                  new_filename="${new_base}_${CONTENT_HASH}.${ext}"
                   
                   echo "🔄 Renaming $filename to $new_filename"
                   git mv "$file" "$dir/$new_filename"
