@@ -17,7 +17,7 @@ echo "   (truncated list...)"
 
 # 1. Conda Installation
 log "📦 Installing pythonocc-core..."
-conda install -y -c conda-forge -c defaults pythonocc-core --debug -vv
+conda install -y -c conda-forge -c defaults pythonocc-core pip --debug -vv
 if [ $? -ne 0 ]; then 
     log "❌ ERROR: Conda install failed. Check dependencies above."
     exit 1
