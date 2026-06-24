@@ -6,6 +6,9 @@ on:
       - "**"
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   validation_check:
     name: "🧪 Pre-Flight: Schema & Range Governance"
@@ -14,7 +17,13 @@ jobs:
       - name: 🗂️ Checkout Repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0 # Required for git log to function
+
+      - name: 🤖 Initialize Robot Identity & Notes
+        run: |
+          git config --global user.name "Automation Engine [${{ github.ref_name }}]"
+          git config --global user.email "automation-${{ github.ref_name }}@yourdomain.com"
+          git config --global notes.rewriteRef "refs/notes/*"
 
       - name: 🐍 Set up Python
         uses: actions/setup-python@v5
@@ -29,8 +38,6 @@ jobs:
       - name: 🧪 Run Governance Validation
         run: |
           echo "🚀 Initiating: Governance Validation Suite"
-          # -s: Disable capturing
-          # --log-cli-level=INFO: Force the logger to print to the console
           pytest tests/test_governance_validation.py -vv -s --log-cli-level=INFO
 
       - name: 🏁 Validation Summary
@@ -41,4 +48,48 @@ jobs:
           else
             echo "❌ Governance Check Failed: Please review the validator output above."
             exit 1
+          fi
+
+      - name: 🔒 Version & Lock Governance Assets
+        if: success()
+        run: |
+          # Target directories
+          DIRS=("configs" "pipelines" "setup_scripts")
+          
+          for dir in "${DIRS[@]}"; do
+            if [ -d "$dir" ]; then
+              for file in "$dir"/*; do
+                if [ -f "$file" ]; then
+                  # Get the short hash of the last commit that changed this file
+                  COMMIT_HASH=$(git log -n 1 --pretty=format:%h -- "$file")
+                  
+                  # Extract extension and base name
+                  ext="${file##*.}"
+                  filename=$(basename "$file")
+                  base="${filename%.*}"
+                  
+                  # Logic: If the file already contains the hash, skip
+                  if [[ "$base" == *"_$COMMIT_HASH" ]]; then
+                    echo "✅ File $filename is already versioned with $COMMIT_HASH. Skipping."
+                    continue
+                  fi
+                  
+                  # Remove old hash suffix if it exists (assuming format name_hash.ext)
+                  new_base=$(echo "$base" | sed -E 's/_[a-f0-9]+$//')
+                  new_filename="${new_base}_${COMMIT_HASH}.${ext}"
+                  
+                  echo "🔄 Renaming $filename to $new_filename"
+                  git mv "$file" "$dir/$new_filename"
+                fi
+              done
+            fi
+          done
+          
+          # Commit the changes if there are any
+          if [ -n "$(git status --porcelain)" ]; then
+            git commit -m "🤖 robot: version-lock governance assets [skip ci]"
+            git push origin HEAD
+            echo "🚀 Version lock pushed to repository."
+          else
+            echo "✅ All files are already perfectly version-locked."
           fi
