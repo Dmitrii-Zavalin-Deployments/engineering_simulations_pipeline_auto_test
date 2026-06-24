@@ -3,9 +3,9 @@
 • tests/test_governance_validation.py
 • README.md
 • schema/pipeline_schema.json
-• setup_scripts/mesh_gen_setup.sh
-• configs/mesh_config_01.json
-• pipelines/mesh_pipeline.json
+• setup_scripts/mesh_gen_setup_b3a34c5.sh
+• configs/mesh_config_0970b4d.json
+• pipelines/mesh_pipeline_3d59b27.json
 -------------------------------------------
 
 ========== START OF FILE: tests/test_governance_validation.py ==========
@@ -224,35 +224,67 @@ The Engine uses these IDs as a **Metadata Handshake**. If the IDs in the fetched
   }
 }========== END OF FILE: schema/pipeline_schema.json ==========
 
-========== START OF FILE: setup_scripts/mesh_gen_setup.sh ==========
+========== START OF FILE: setup_scripts/mesh_gen_setup_b3a34c5.sh ==========
 #!/bin/bash
 # setup_scripts/mesh_gen_setup.sh
-# Lean Runtime: Only local physics and contract enforcement dependencies.
 
-set -e  # Fail fast
+# Turn off 'fail fast' for debugging installation flows
+set +e
 
-echo "🚀 Provisioning lean runtime environment (Excluding redundant I/O stack)..."
+# Utility function for formatted logging with timestamps
+log() { echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1"; }
 
-# 1. Install heavy binary physics stack via Conda
-conda install -y -c conda-forge pythonocc-core
+log "🚀 Provisioning lean runtime environment..."
 
-# 2. Upgrade pip
-python -m pip install --upgrade pip
+# 0. Pre-installation environment check
+log "📋 Initial Environment State:"
+python --version
+pip list | head -n 5 
+echo "   (truncated list...)"
 
-# 3. Install required runtime dependencies only
-# We removed 'dropbox' as it is handled by the parent Aggregator environment.
-pip install \
-    numpy>=2.0.0 \
-    h5py>=3.12.0 \
-    requests>=2.32.0 \
-    jsonschema>=4.23.0
+# 1. Conda Installation
+log "📦 Installing pythonocc-core..."
+conda install -y -c conda-forge -c defaults pythonocc-core pip --debug -vv
+if [ $? -ne 0 ]; then 
+    log "❌ ERROR: Conda install failed. Check dependencies above."
+    exit 1
+fi
+log "✅ pythonocc-core installed."
 
-echo "✅ Environment ready for execution."========== END OF FILE: setup_scripts/mesh_gen_setup.sh ==========
+# 2. Pip Upgrade
+log "📦 Upgrading pip..."
+python -m pip install --upgrade pip -v
 
-========== START OF FILE: configs/mesh_config_01.json ==========
+# 3. Helper Function for Verbose Installation
+install_pkg() {
+    local pkg=$1
+    log "   ↳ Installing $pkg..."
+    
+    # -v adds verbose logging to show exactly what dependency metadata is being checked
+    python -m pip install "$pkg" -v 
+    
+    if [ $? -ne 0 ]; then
+        log "   ❌ ERROR: Failed to install $pkg."
+        log "   🔍 Running 'pip check' to show conflicts:"
+        pip check
+        exit 1
+    fi
+    log "   ✅ $pkg installed successfully."
+}
+
+# 4. Dependency Installation
+log "📦 Starting dependency installation phase..."
+install_pkg "numpy>=2.0.0"
+install_pkg "h5py>=3.12.0"
+install_pkg "requests>=2.32.0"
+install_pkg "jsonschema>=4.23.0"
+
+log "✅ Environment ready for execution."========== END OF FILE: setup_scripts/mesh_gen_setup_b3a34c5.sh ==========
+
+========== START OF FILE: configs/mesh_config_0970b4d.json ==========
 {
   "solver_version": ["1.0.0"],
-  "tolerance": [1e-7],
+  "tolerance": [1e-7, 1e-6, 1e-5],
   "max_element_size": [0.5],
   "min_element_size": [0.1],
   "boundary_map": {
@@ -264,18 +296,18 @@ echo "✅ Environment ready for execution."========== END OF FILE: setup_scripts
     "z_max": ["no-slip"],
     "wall": ["no-slip"]
   }
-}========== END OF FILE: configs/mesh_config_01.json ==========
+}========== END OF FILE: configs/mesh_config_0970b4d.json ==========
 
-========== START OF FILE: pipelines/mesh_pipeline.json ==========
+========== START OF FILE: pipelines/mesh_pipeline_3d59b27.json ==========
 [
     {
         "order": 1,
         "repository_url": "git@github.com:Dmitrii-Zavalin-Deployments/mesh_generator.git",
         "version_tag": "main",
         "config_ids": [
-            "mesh_config_01"
+            "mesh_config_0970b4d"
         ],
-        "setup_script": "setup_scripts/mesh_gen_setup.sh"
+        "setup_script": "setup_scripts/mesh_gen_setup_b3a34c5.sh"
     }
-]========== END OF FILE: pipelines/mesh_pipeline.json ==========
+]========== END OF FILE: pipelines/mesh_pipeline_3d59b27.json ==========
 
