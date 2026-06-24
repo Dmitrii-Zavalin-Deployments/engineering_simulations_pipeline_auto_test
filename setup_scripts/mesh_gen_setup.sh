@@ -1,14 +1,14 @@
 #!/bin/bash
 # setup_scripts/mesh_gen_setup.sh
-# Lean Runtime: Only local physics and contract enforcement dependencies.
 
-set -e  # Fail fast
+set -e # Keep this, but we will add logging below
 
 echo "🚀 Provisioning lean runtime environment..."
 
 # 1. Install heavy binary physics stack via Conda
-echo "📦 Installing pythonocc-core..."
-conda install -y -c conda-forge pythonocc-core
+# Added --debug and -vv for verbose logging if it fails
+echo "📦 Installing pythonocc-core (Verbose)..."
+conda install -y -c conda-forge -c defaults pythonocc-core --debug -vv
 echo "✅ pythonocc-core installed successfully."
 
 # 2. Upgrade pip
