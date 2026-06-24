@@ -4,7 +4,7 @@
         "repository_url": "git@github.com:Dmitrii-Zavalin-Deployments/mesh_generator.git",
         "version_tag": "main",
         "config_ids": [
-            "mesh_config_d28e5c4.json"
+            "mesh_config_5a5ca66"
         ],
         "setup_script": "setup_scripts/mesh_gen_setup_29a0b86.sh"
     }
