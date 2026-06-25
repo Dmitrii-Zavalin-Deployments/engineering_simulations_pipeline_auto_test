@@ -26,7 +26,7 @@
       },
       "config": {
         "type": "string",
-        "description": "Path to the unified configuration file (the single source of truth for all modules in this pipeline)."
+        "description": "Path to the unified configuration file (the single source of truth - combined from config.json files from all modules in this pipeline)."
       },
       "setup_script": {
         "type": "string",
