@@ -8,7 +8,7 @@
       "order", 
       "repository_url", 
       "version_tag", 
-      "config_ids", 
+      "config", 
       "setup_script"
     ],
     "properties": {
@@ -24,16 +24,13 @@
         "type": "string",
         "description": "Git branch, tag, or commit hash to checkout."
       },
-      "config_ids": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        },
-        "description": "List of config files (from the library configs/ folder) to run for this step."
+      "config": {
+        "type": "string",
+        "description": "Path to the unified configuration file (the single source of truth for all modules in this pipeline)."
       },
       "setup_script": {
         "type": "string",
-        "description": "The path to the shell script within this Library repository that provisions the environment (e.g., 'setup_scripts/mesh_generator_setup.sh')."
+        "description": "The path to the shell script within this Library repository that provisions the environment."
       }
     }
   }
