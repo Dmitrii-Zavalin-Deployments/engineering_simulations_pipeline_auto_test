@@ -1,0 +1,9 @@
+[
+    {
+        "order": 1,
+        "repository_url": "https://github.com/Dmitrii-Zavalin-Deployments/mesh_generator.git",
+        "version_tag": "main",
+        "config": "config/mesh_config_f3e69ed.json",
+        "setup_script": "setup_scripts/mesh_gen_setup_a7a0f75.sh"
+    }
+]
