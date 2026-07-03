@@ -56,9 +56,6 @@ jobs:
           # Target directories
           DIRS=("configs" "pipelines" "setup_scripts")
           
-          # Initialize tracker to store renaming actions for the post-loop deep sweep
-          declare -a RENAMES=()
-
           for dir in "${DIRS[@]}"; do
             if [ -d "$dir" ]; then
               for file in "$dir"/*; do
@@ -77,26 +74,19 @@ jobs:
                     continue
                   fi
                   
-                  # Remove any old hash suffix (strips _[a-f0-9]+ from the end of the base name)
+                  # Remove any old hash suffix
                   new_base=$(echo "$base" | sed -E 's/_[a-f0-9]+$//')
                   new_filename="${new_base}_${CONTENT_HASH}.${ext}"
                   
                   echo "🔄 Renaming $filename to $new_filename"
                   git mv "$file" "$dir/$new_filename"
 
-                  # Record transitions for the post-loop JSON alignment pass
-                  RENAMES+=("$filename:$new_filename")
-                  
-                  # Also track the bare unhashed filename variant to catch raw manual entries
-                  if [[ "$filename" != "${new_base}.${ext}" ]]; then
-                    RENAMES+=("${new_base}.${ext}:$new_filename")
-                  fi
-
                   # ---------------------------------------------------------
-                  # 🔍 INNER SWEEP: Update references to old filename inside all files
+                  # 🔍 Update references INSIDE files (not filenames)
                   # ---------------------------------------------------------
                   echo "🔎 Searching for references to $filename → $new_filename"
 
+                  # Find files containing the old filename INSIDE their content
                   matches=$(grep -RIl "$filename" . || true)
 
                   if [ -z "$matches" ]; then
@@ -106,7 +96,7 @@ jobs:
                     echo "$matches"
 
                     for mfile in $matches; do
-                      echo "✏️ Updating $mfile"
+                      echo "✏️ Updating text inside $mfile"
                       sed -i "s/$filename/$new_filename/g" "$mfile"
                       echo "✅ Updated $mfile"
                     done
@@ -117,41 +107,6 @@ jobs:
             fi
           done
           
-          # ------------------------------------------------------------------------------
-          # 🧹 POST-LOOP REMEDIATION: Deep JSON Reference Alignment Sweep
-          # ------------------------------------------------------------------------------
-          if [ ${#RENAMES[@]} -gt 0 ]; then
-            echo -e "\n=================================================================="
-            echo "🤖 STARTING POST-LOOP DEEP SWEEP ON ALL JSON ASSETS"
-            echo "=================================================================="
-            for rename_pair in "${RENAMES[@]}"; do
-              OLD_REF="${rename_pair%%:*}"
-              NEW_REF="${rename_pair#*I:}"
-              # Split array elements properly
-              OLD_REF=$(echo "$rename_pair" | cut -d':' -f1)
-              NEW_REF=$(echo "$rename_pair" | cut -d':' -f2)
-              
-              echo "📂 Scanning JSON targets for residual references: '$OLD_REF' ➔ '$NEW_REF'"
-              
-              # Locate matching JSON files explicitly
-              JSON_MATCHES=$(find . -type f -name "*.json" -exec grep -l "$OLD_REF" {} + || true)
-              
-              if [ -n "$JSON_MATCHES" ]; then
-                echo "📝 Found unaligned references in JSON file matrix:"
-                echo "$JSON_MATCHES"
-                for json_file in $JSON_MATCHES; do
-                  sed -i "s/$OLD_REF/$NEW_REF/g" "$json_file"
-                  echo "  ✅ Remediated reference successfully inside: $json_file"
-                done
-              else
-                echo "  ℹ️ No matching JSON references remaining for $OLD_REF."
-              fi
-            done
-            echo "=================================================================="
-            echo "✅ POST-LOOP DEEP SWEEP SYSTEM CLEAN"
-            echo -e "==================================================================\n"
-          fi
-
           # Commit the changes if there are any
           if [ -n "$(git status --porcelain)" ]; then
             git commit -m "🤖 robot: version-lock governance assets [skip ci]"
