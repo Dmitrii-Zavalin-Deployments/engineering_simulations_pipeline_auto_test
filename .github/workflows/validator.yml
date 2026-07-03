@@ -80,6 +80,27 @@ jobs:
                   
                   echo "🔄 Renaming $filename to $new_filename"
                   git mv "$file" "$dir/$new_filename"
+
+                  # ---------------------------------------------------------
+                  # 🔍 NEW: Update references to old filename inside all files
+                  # ---------------------------------------------------------
+                  echo "🔎 Searching for references to $filename → $new_filename"
+
+                  matches=$(grep -RIl "$filename" . || true)
+
+                  if [ -z "$matches" ]; then
+                    echo "ℹ️ No references found for $filename"
+                  else
+                    echo "📄 Found references in:"
+                    echo "$matches"
+
+                    for mfile in $matches; do
+                      echo "✏️ Updating $mfile"
+                      sed -i "s/$filename/$new_filename/g" "$mfile"
+                      echo "✅ Updated $mfile"
+                    done
+                  fi
+                  # ---------------------------------------------------------
                 fi
               done
             fi
