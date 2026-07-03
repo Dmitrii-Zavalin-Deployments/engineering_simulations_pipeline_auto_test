@@ -1,0 +1,15 @@
+{
+  "solver_version": ["1.0.0"],
+  "tolerance": [1000, 100.0, 10.0, 1.0, 0.1, 0.01],
+  "max_element_size": [25000],
+  "min_element_size": [10000],
+  "boundary_map": {
+    "x_min": ["inflow"],
+    "x_max": ["outflow"],
+    "y_min": ["no-slip"],
+    "y_max": ["no-slip"],
+    "z_min": ["no-slip"],
+    "z_max": ["no-slip"],
+    "wall": ["no-slip"]
+  }
+}
