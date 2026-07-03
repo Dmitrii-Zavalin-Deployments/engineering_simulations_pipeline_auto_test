@@ -1,8 +1,8 @@
 {
   "solver_version": ["1.0.0"],
-  "tolerance": [1e-7],
-  "max_element_size": [0.5],
-  "min_element_size": [0.1],
+  "tolerance": [1e+1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5],
+  "max_element_size": [25],
+  "min_element_size": [10],
   "boundary_map": {
     "x_min": ["inflow"],
     "x_max": ["outflow"],
