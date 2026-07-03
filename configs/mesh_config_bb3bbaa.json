@@ -1,6 +1,6 @@
 {
   "solver_version": ["1.0.0"],
-  "tolerance": [1000, 100.0, 10.0, 1.0, 0.1, 0.01],
+  "tolerance": [1000, 100.0, 10.0],
   "max_element_size": [25000],
   "min_element_size": [10000],
   "boundary_map": {
