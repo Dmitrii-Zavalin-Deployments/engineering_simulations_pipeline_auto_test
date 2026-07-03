@@ -82,24 +82,36 @@ jobs:
                   git mv "$file" "$dir/$new_filename"
 
                   # ---------------------------------------------------------
-                  # 🔍 Update references INSIDE files (not filenames)
+                  # 🔍 INLINE DEEP SWEEP: Update references immediately
                   # ---------------------------------------------------------
-                  echo "🔎 Searching for references to $filename → $new_filename"
-
-                  # Find files containing the old filename INSIDE their content
+                  
+                  echo "🔎 Searching everywhere for references to '$filename' ➔ '$new_filename'"
+                  
+                  # Find files that contain the old filename
                   matches=$(grep -RIl "$filename" . || true)
 
-                  if [ -z "$matches" ]; then
-                    echo "ℹ️ No references found for $filename"
-                  else
+                  if [ -n "$matches" ]; then
                     echo "📄 Found references in:"
                     echo "$matches"
 
                     for mfile in $matches; do
-                      echo "✏️ Updating text inside $mfile"
-                      sed -i "s/$filename/$new_filename/g" "$mfile"
-                      echo "✅ Updated $mfile"
+                      echo "✏️ Updating text inside: $mfile"
+                      
+                      # Perform the replacement using | as a delimiter
+                      sed -i "s|${filename}|${new_filename}|g" "$mfile"
+                      
+                      # Verification Step: Did the change actually happen?
+                      if grep -q "$new_filename" "$mfile"; then
+                        echo "  ✅ Verification passed: $new_filename found in $mfile"
+                        git add "$mfile"
+                      else
+                        echo "  ❌ ERROR: Replacement failed for $mfile. Trying alternative format."
+                        # Fallback: sometimes paths inside JSON require escaping
+                        sed -i "s|${filename//\//\\/}|${new_filename//\//\\/}|g" "$mfile"
+                      fi
                     done
+                  else
+                    echo "ℹ️ No references found for $filename"
                   fi
                   # ---------------------------------------------------------
                 fi
