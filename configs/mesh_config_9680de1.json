@@ -2,7 +2,7 @@
   "solver_version": ["1.0.0"],
   "tolerance": [100],
   "max_element_size": [2500],
-  "min_element_size": [1000, 100, 75, 50, 25, 10, 5],
+  "min_element_size": [5, 10, 25, 50, 75, 100, 1000],
   "boundary_map": {
     "x_min": ["inflow"],
     "x_max": ["outflow"],
