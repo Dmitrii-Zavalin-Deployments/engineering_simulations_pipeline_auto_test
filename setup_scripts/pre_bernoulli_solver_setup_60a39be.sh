@@ -1,5 +1,5 @@
 #!/bin/bash
-# setup_scripts/pre_bernoulli_solver_setup_2f6ce74.sh
+# setup_scripts/pre_bernoulli_solver_setup_60a39be.sh
 
 # Turn off 'fail fast' for debugging installation flows
 set +e
