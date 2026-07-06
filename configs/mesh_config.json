@@ -1,4 +1,5 @@
 {
+  "engine_type": ["gmsh"],
   "solver_version": ["1.0.0"],
   "tolerance": [100],
   "max_element_size": [2500],
