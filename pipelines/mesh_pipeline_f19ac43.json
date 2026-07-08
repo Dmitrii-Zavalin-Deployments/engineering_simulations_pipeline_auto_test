@@ -3,7 +3,7 @@
         "order": 1,
         "repository_url": "https://github.com/Dmitrii-Zavalin-Deployments/mesh_generator.git",
         "version_tag": "model_8",
-        "config": "config/mesh_config_6d8432d.json",
-        "setup_script": "setup_scripts/mesh_gen_setup_61676f9.sh"
+        "config": "config/mesh_config_69f220f.json",
+        "setup_script": "setup_scripts/mesh_gen_setup_4a52a7e.sh"
     }
 ]
