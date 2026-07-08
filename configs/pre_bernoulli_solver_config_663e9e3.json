@@ -18,7 +18,7 @@
       "requires_all": [],
       "requires_none": [],
       "input_file": "environment_initial_data.json",
-      "output_assembler_file": "building_navier_stokes_output.json"
+      "output_assembler_file": "data_for_the_bernoulli_solver.json"
     }
   ]
 }
