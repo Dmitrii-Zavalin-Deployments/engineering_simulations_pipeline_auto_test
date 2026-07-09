@@ -48,6 +48,8 @@ install_pkg "numpy>=2.0.0"
 install_pkg "h5py>=3.12.0"
 install_pkg "requests>=2.32.0"
 install_pkg "jsonschema>=4.23.0"
+# Add matplotlib here to ensure it is explicitly present
+install_pkg "matplotlib>=3.7.0"
 
 # Inject setuptools to provide 'pkg_resources' required by legacy/third-party packages like dropbox
 install_pkg "setuptools>=60.0.0"
