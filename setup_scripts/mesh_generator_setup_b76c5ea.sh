@@ -1,5 +1,5 @@
 #!/bin/bash
-# setup_scripts/mesh_generator_setup_7d7d5b6.sh
+# setup_scripts/mesh_generator_setup_b76c5ea.sh
 
 # Turn off 'fail fast' for debugging installation flows
 set +e
