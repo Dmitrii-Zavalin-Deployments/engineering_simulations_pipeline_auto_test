@@ -38,7 +38,41 @@ jobs:
       - name: 🧪 Run Governance Validation
         run: |
           echo "🚀 Initiating: Governance Validation Suite"
-          pytest tests/test_governance_validation.py -vv -s --log-cli-level=INFO
+          
+          # Initialize metrics tracking logs
+          rm -f /tmp/cpu_track.log /tmp/memory_profile.log
+          
+          # Spawn high-frequency active background CPU load sampler
+          while true; do
+            top -bn1 | grep "Cpu(s)" | awk '{print $2 + $4}' >> /tmp/cpu_track.log 2>/dev/null || true
+            sleep 1
+          done &
+          SAMPLER_PID=$!
+          
+          # Execute validation test suite profiling maximum resident set memory size
+          /usr/bin/time -v pytest tests/test_governance_validation.py -vv -s --log-cli-level=INFO 2> /tmp/memory_profile.log
+          TEST_EXIT_CODE=$?
+          
+          # Terminate background track sampler
+          kill $SAMPLER_PID
+          
+          # Extract absolute true peak compute values during validation runtime
+          PEAK_CPU=$(sort -n /tmp/cpu_track.log | tail -n 1)
+          if [ -z "$PEAK_CPU" ]; then PEAK_CPU="0.0"; fi
+          
+          MAX_RSS_KB=$(grep "Maximum resident set size" /tmp/memory_profile.log | awk '{print $6}')
+          if [ -z "$MAX_RSS_KB" ]; then
+            MAX_RSS_MB=$(free -m | awk '/Mem:/ { print $3 }')
+          else
+            MAX_RSS_MB=$((MAX_RSS_KB / 1024))
+          fi
+          TOTAL_MEM_MB=$(free -m | awk '/Mem:/ { print $2 }')
+          
+          # Bind extracted profile variables to pipeline environment block
+          echo "GOVERNANCE_ACTIVE_PEAK_CPU=${PEAK_CPU}%" >> $GITHUB_ENV
+          echo "GOVERNANCE_ACTIVE_PEAK_MEM=${MAX_RSS_MB}/${TOTAL_MEM_MB}MB" >> $GITHUB_ENV
+          
+          exit $TEST_EXIT_CODE
 
       - name: 🏁 Validation Summary
         if: always()
@@ -140,8 +174,10 @@ jobs:
           RUN_DATE=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
           STATUS="${{ job.status }}"
           CURRENT_BRANCH=${GITHUB_REF##*/}
-          CPU_LOAD=$(top -bn1 | grep "Cpu(s)" | awk '{print $2 + $4 "%"}')
-          MEM_USAGE=$(free -m | awk '/Mem:/ { print $3 "/" $2 "MB" }')
+          
+          # Inject true active peak metrics, using instant system calls only as an early step failure fallback
+          CPU_LOAD="${GOVERNANCE_ACTIVE_PEAK_CPU:-$(top -bn1 | grep "Cpu(s)" | awk '{print $2 + $4 "%"}')}"
+          MEM_USAGE="${GOVERNANCE_ACTIVE_PEAK_MEM:-$(free -m | awk '/Mem:/ { print $3 "/" $2 "MB" }')}"
 
           # New log entry
           NEW_ENTRY=$(cat <<EOF
