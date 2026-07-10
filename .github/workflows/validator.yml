@@ -190,7 +190,7 @@ jobs:
           EOF
           )
 
-          HEADER="# 🌊 Fluid Dynamics Simulator: Governance & Performance Audit"
+          HEADER="# 🌊 Fluid Dynamics Library for the Simulators Aggregator: Performance Audit"
           TUTORIAL="### 📚 Resources & Documentation
           - **Tutorial/Book:** ***currently in development***
           ---"
