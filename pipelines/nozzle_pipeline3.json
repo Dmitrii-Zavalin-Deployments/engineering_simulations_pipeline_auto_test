@@ -1,5 +1,5 @@
 {
-    "config": "config/nozzle_config_7b30d34.json",
+    "config": "config/nozzle_config3.json",
     "setup_script": "setup_scripts/mesh_generator_setup_9d4c0ce.sh",
     "execution_chain": [
         {
