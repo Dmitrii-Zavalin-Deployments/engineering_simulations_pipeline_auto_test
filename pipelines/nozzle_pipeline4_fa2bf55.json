@@ -1,6 +1,6 @@
 {
-    "config": "config/nozzle_config5_9663663.json",
-    "setup_script": "setup_scripts/mesh_generator_setup_a600174.sh",
+    "config": "config/nozzle_config4_1522449.json",
+    "setup_script": "setup_scripts/mesh_generator_setup_598ba2e.sh",
     "execution_chain": [
         {
             "order": 1,
