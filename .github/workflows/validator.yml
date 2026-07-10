@@ -127,3 +127,69 @@ jobs:
           else
             echo "✅ All files are already perfectly version-locked."
           fi
+
+      - name: 📊 Audit Performance Ledger & Sync
+        if: always()
+        run: |
+          # ⚠️ WARNING: git reset/clean deletes non-tracked files. 
+          # Ensure your simulation artifacts are already saved/uploaded before this step!
+          git reset --hard HEAD
+          git clean -ffdx
+          git pull origin HEAD --rebase
+
+          RUN_DATE=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          STATUS="${{ job.status }}"
+          CURRENT_BRANCH=${GITHUB_REF##*/}
+          CPU_LOAD=$(top -bn1 | grep "Cpu(s)" | awk '{print $2 + $4 "%"}')
+          MEM_USAGE=$(free -m | awk '/Mem:/ { print $3 "/" $2 "MB" }')
+
+          # New log entry
+          NEW_ENTRY=$(cat <<EOF
+          ### Audit: $RUN_DATE
+          - **Branch:** \`$CURRENT_BRANCH\`
+          - **Status:** $STATUS
+          - **CPU Load:** $CPU_LOAD
+          - **Memory Usage:** $MEM_USAGE
+          ---
+          EOF
+          )
+
+          HEADER="# 🌊 Fluid Dynamics Simulator: Governance & Performance Audit"
+          TUTORIAL="### 📚 Resources & Documentation
+          - **Tutorial/Book:** ***currently in development***
+          ---"
+
+          if [ -f "README.md" ]; then
+              # Extract everything after the first horizontal rule to preserve the body
+              sed '1,/---/d' README.md > old_body.tmp
+              echo "$HEADER" > README.md
+              echo "$TUTORIAL" >> README.md
+              echo "$NEW_ENTRY" >> README.md
+              cat old_body.tmp >> README.md
+              rm old_body.tmp
+          else
+              # Initialize new README
+              echo "$HEADER" > README.md
+              echo "$TUTORIAL" >> README.md
+              echo "$NEW_ENTRY" >> README.md
+          fi
+
+          git add README.md
+
+          if [ -n "$(git status --porcelain README.md)" ]; then
+            git commit -m "🤖 robot: audit ledger update [${{ job.status }}] [skip ci]"
+            TARGET_COMMIT=$(git rev-parse HEAD)
+
+            # 1 Fetch remote notes
+            git fetch origin refs/notes/commits:refs/notes/commits || true
+
+            # 2 Add note locally
+            git notes add -f -m "robot: true" "$TARGET_COMMIT"
+
+            # 3 Push commit and notes
+            git pull origin HEAD --rebase || echo "Rebase failed, pushing without rebase."
+            git push origin HEAD
+            git push --force origin refs/notes/commits || true
+          else
+            echo "No ledger changes."
+          fi
