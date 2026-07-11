@@ -2,7 +2,7 @@
   "engine_type": ["gmsh"],
   "solver_version": ["1.0.0"],
   "tolerance": [1],
-  "max_element_size": [5000],
+  "max_element_size": [1000],
   "min_element_size": [1, 5, 10, 15, 20, 25, 30, 35, 38],
   "boundary_map": {
     "x_min": ["inflow"],
@@ -12,13 +12,5 @@
     "z_min": ["no-slip"],
     "z_max": ["no-slip"],
     "wall": ["no-slip"]
-  },
-  "runs": [
-    {
-      "requires_all": [],
-      "requires_none": [],
-      "input_file": "environment_initial_data.json",
-      "output_assembler_file": "data_for_the_bernoulli_solver.json"
-    }
-  ]
+  }
 }

@@ -1,16 +1,16 @@
 {
-    "config": "config/pre_bernoulli_solver_config_c34f1a8.json",
-    "setup_script": "setup_scripts/mesh_generator_setup_598ba2e.sh",
+    "config": "config/pre_bernoulli_solver_config.json",
+    "setup_script": "setup_scripts/pre_bernoulli_solver_setup.sh",
     "execution_chain": [
         {
             "order": 1,
             "repository_url": "https://github.com/Dmitrii-Zavalin-Deployments/mesh_generator.git",
-            "version_tag": "main"
+            "version_tag": "model_10"
         },
         {
             "order": 2,
             "repository_url": "https://github.com/Dmitrii-Zavalin-Deployments/schema_merger_splitter.git",
-            "version_tag": "main"
+            "version_tag": "model_4"
         }
     ]
 }
