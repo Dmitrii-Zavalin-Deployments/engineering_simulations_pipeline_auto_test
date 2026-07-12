@@ -5,7 +5,7 @@
   "required": [
     "config",
     "setup_script",
-    "input_output_folder",
+    "modules_input_output_folder",
     "execution_chain"
   ],
   "properties": {
@@ -17,7 +17,7 @@
       "type": "string",
       "description": "The path to the shell script that provisions the global environment."
     },
-    "input_output_folder": {
+    "modules_input_output_folder": {
       "type": "string",
       "description": "The directory path where all step inputs and outputs reside."
     },
