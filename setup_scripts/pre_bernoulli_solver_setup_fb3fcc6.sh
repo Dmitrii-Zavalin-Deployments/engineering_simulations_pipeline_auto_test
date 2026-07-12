@@ -1,5 +1,5 @@
 #!/bin/bash
-# setup_scripts/mesh_generator_setup_0893225.sh
+# setup_scripts/mesh_generator_setup_fc47cf4.sh
 
 # Keep 'set +e' to handle errors manually
 set +e
