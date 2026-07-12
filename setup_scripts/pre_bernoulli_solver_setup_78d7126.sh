@@ -1,55 +1,53 @@
 #!/bin/bash
-# setup_scripts/pre_bernoulli_solver_setup_60026f6.sh
+# setup_scripts/mesh_generator_setup_0893225.sh
 
-# Turn off 'fail fast' for debugging installation flows
+# Keep 'set +e' to handle errors manually
 set +e
 
-# Utility function for formatted logging with timestamps
+# Utility function for formatted logging
 log() { echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1"; }
 
-log "🚀 Provisioning lean runtime environment..."
+log "🚀 Provisioning runtime environment (Cold Start)..."
 
 # 0. Pre-installation environment check
 log "📋 Initial Environment State:"
 python --version
 pip list | head -n 5 
 
-# 1. Pip Upgrade
+# 1. Conda Installation 
+# Note: Ensure 'conda-solver: libmamba' is set in your Actions YAML for maximum speed
+log "📦 Installing base binary layers via Conda..."
+conda install -y -c conda-forge pythonocc-core gmsh numpy pip
+if [ $? -ne 0 ]; then 
+    log "❌ ERROR: Conda install failed."
+    exit 1
+fi
+log "✅ Base Conda dependencies installed."
+
+# 2. Pip Upgrade
 log "📦 Upgrading pip..."
-python -m pip install --upgrade pip -v
+python -m pip install --upgrade pip
 
-# 2. Helper Function for Verbose Installation
-install_pkg() {
-    local pkg=$1
-    log "   ↳ Installing $pkg..."
-    
-    python -m pip install "$pkg" -v 
-    
-    if [ $? -ne 0 ]; then
-        log "   ❌ ERROR: Failed to install $pkg."
-        log "   🔍 Running 'pip check' to show conflicts:"
-        pip check
-        exit 1
-    fi
-    log "   ✅ $pkg installed successfully."
-}
+# 3. Batched Dependency Installation
+# Installing in one batch is significantly faster than individual calls
+# because it allows Pip to resolve the full dependency tree in a single pass.
+log "📦 Installing Python dependencies in batch..."
+python -m pip install --no-cache-dir \
+    "numpy>=2.0.0" \
+    "h5py>=3.12.0" \
+    "requests>=2.32.0" \
+    "jsonschema>=4.23.0" \
+    "matplotlib>=3.7.0" \
+    "setuptools>=60.0.0" \
+    "dropbox>=11.36.2" \
+    "gmsh>=4.13.1"
 
-# 3. Dependency Installation Phase
-log "📦 Starting dependency installation phase..."
+if [ $? -ne 0 ]; then
+    log "❌ ERROR: Batch installation failed."
+    log "🔍 Running 'pip check' to show dependency conflicts:"
+    pip check
+    exit 1
+fi
 
-# Foundation (Rule 9: Hybrid Memory)
-install_pkg "numpy>=2.0.0"
-install_pkg "h5py>=3.12.0"
-
-# Archivist I/O Layer (Rule 10: Cloud Sync)
-install_pkg "requests>=2.32.0"
-install_pkg "dropbox>=11.36.2"
-
-# Contract Enforcement
-install_pkg "jsonschema>=4.23.0"
-install_pkg "jsonpath-ng>=1.6.1"
-
-# Legacy Infrastructure (Required by dropbox/third-party)
-install_pkg "setuptools>=60.0.0"
-
+log "✅ All dependencies installed successfully."
 log "✅ Environment ready for execution."
