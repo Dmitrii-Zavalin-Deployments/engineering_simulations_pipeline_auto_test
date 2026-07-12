@@ -5,7 +5,7 @@
 • schema/pipeline_schema.json
 • LICENSE
 • setup_scripts/pre_bernoulli_solver_setup_78d7126.sh
-• setup_scripts/mesh_generator_setup_89ec061.sh
+• setup_scripts/mesh_generator_setup_4b5bfe1.sh
 • configs/nozzle_config3_7b30d34.json
 • configs/nozzle_config5_9663663.json
 • configs/nozzle_config6_b162ced.json
@@ -16,16 +16,16 @@
 • configs/nozzle_config1_4cbb37d.json
 • configs/mesh_config_9663663.json
 • configs/nozzle_config2_4fd30b5.json
-• pipelines/nozzle_pipeline1_4d94086.json
-• pipelines/nozzle_pipeline8_e43451b.json
-• pipelines/nozzle_pipeline5_c2fb51c.json
-• pipelines/nozzle_pipeline4_208649d.json
-• pipelines/pre_bernoulli_solver_pipeline_2cd3520.json
-• pipelines/nozzle_pipeline2_f4abd91.json
-• pipelines/nozzle_pipeline7_525f5e5.json
-• pipelines/nozzle_pipeline6_6259e43.json
-• pipelines/mesh_pipeline_a416982.json
-• pipelines/nozzle_pipeline3_23c71e8.json
+• pipelines/nozzle_pipeline1_1efebc8.json
+• pipelines/nozzle_pipeline8_3843b13.json
+• pipelines/nozzle_pipeline5_14bfe82.json
+• pipelines/nozzle_pipeline4_b88efb2.json
+• pipelines/pre_bernoulli_solver_pipeline_c65186c.json
+• pipelines/nozzle_pipeline2_b6a10b1.json
+• pipelines/nozzle_pipeline7_f0fcc99.json
+• pipelines/nozzle_pipeline6_44d246b.json
+• pipelines/mesh_pipeline_fcb4f2e.json
+• pipelines/nozzle_pipeline3_9d8f0c1.json
 -------------------------------------------
 
 ========== START OF FILE: tests/test_governance_validation.py ==========
@@ -955,9 +955,9 @@ install_pkg "setuptools>=60.0.0"
 
 log "✅ Environment ready for execution."========== END OF FILE: setup_scripts/pre_bernoulli_solver_setup_78d7126.sh ==========
 
-========== START OF FILE: setup_scripts/mesh_generator_setup_89ec061.sh ==========
+========== START OF FILE: setup_scripts/mesh_generator_setup_4b5bfe1.sh ==========
 #!/bin/bash
-# setup_scripts/mesh_generator_setup_89ec061.sh
+# setup_scripts/mesh_generator_setup_4b5bfe1.sh
 
 # Turn off 'fail fast' for debugging installation flows
 set +e
@@ -1016,7 +1016,7 @@ install_pkg "dropbox>=11.36.2"
 # Force-install Python bindings to coordinate with Conda Gmsh binaries
 install_pkg "gmsh>=4.13.1"
 
-log "✅ Environment ready for execution."========== END OF FILE: setup_scripts/mesh_generator_setup_89ec061.sh ==========
+log "✅ Environment ready for execution."========== END OF FILE: setup_scripts/mesh_generator_setup_4b5bfe1.sh ==========
 
 ========== START OF FILE: configs/nozzle_config3_7b30d34.json ==========
 {
@@ -1198,10 +1198,10 @@ log "✅ Environment ready for execution."========== END OF FILE: setup_scripts/
   }
 }========== END OF FILE: configs/nozzle_config2_4fd30b5.json ==========
 
-========== START OF FILE: pipelines/nozzle_pipeline1_4d94086.json ==========
+========== START OF FILE: pipelines/nozzle_pipeline1_1efebc8.json ==========
 {
     "config": "config/nozzle_config1_4cbb37d.json",
-    "setup_script": "setup_scripts/mesh_generator_setup_89ec061.sh",
+    "setup_script": "setup_scripts/mesh_generator_setup_4b5bfe1.sh",
     "execution_chain": [
         {
             "order": 1,
@@ -1209,12 +1209,12 @@ log "✅ Environment ready for execution."========== END OF FILE: setup_scripts/
             "version_tag": "model_9"
         }
     ]
-}========== END OF FILE: pipelines/nozzle_pipeline1_4d94086.json ==========
+}========== END OF FILE: pipelines/nozzle_pipeline1_1efebc8.json ==========
 
-========== START OF FILE: pipelines/nozzle_pipeline8_e43451b.json ==========
+========== START OF FILE: pipelines/nozzle_pipeline8_3843b13.json ==========
 {
     "config": "config/nozzle_config8_ea55d4e.json",
-    "setup_script": "setup_scripts/mesh_generator_setup_89ec061.sh",
+    "setup_script": "setup_scripts/mesh_generator_setup_4b5bfe1.sh",
     "execution_chain": [
         {
             "order": 1,
@@ -1222,12 +1222,12 @@ log "✅ Environment ready for execution."========== END OF FILE: setup_scripts/
             "version_tag": "model_9"
         }
     ]
-}========== END OF FILE: pipelines/nozzle_pipeline8_e43451b.json ==========
+}========== END OF FILE: pipelines/nozzle_pipeline8_3843b13.json ==========
 
-========== START OF FILE: pipelines/nozzle_pipeline5_c2fb51c.json ==========
+========== START OF FILE: pipelines/nozzle_pipeline5_14bfe82.json ==========
 {
     "config": "config/nozzle_config5_9663663.json",
-    "setup_script": "setup_scripts/mesh_generator_setup_89ec061.sh",
+    "setup_script": "setup_scripts/mesh_generator_setup_4b5bfe1.sh",
     "execution_chain": [
         {
             "order": 1,
@@ -1235,12 +1235,12 @@ log "✅ Environment ready for execution."========== END OF FILE: setup_scripts/
             "version_tag": "model_9"
         }
     ]
-}========== END OF FILE: pipelines/nozzle_pipeline5_c2fb51c.json ==========
+}========== END OF FILE: pipelines/nozzle_pipeline5_14bfe82.json ==========
 
-========== START OF FILE: pipelines/nozzle_pipeline4_208649d.json ==========
+========== START OF FILE: pipelines/nozzle_pipeline4_b88efb2.json ==========
 {
     "config": "config/nozzle_config4_1522449.json",
-    "setup_script": "setup_scripts/mesh_generator_setup_89ec061.sh",
+    "setup_script": "setup_scripts/mesh_generator_setup_4b5bfe1.sh",
     "execution_chain": [
         {
             "order": 1,
@@ -1248,9 +1248,9 @@ log "✅ Environment ready for execution."========== END OF FILE: setup_scripts/
             "version_tag": "model_9"
         }
     ]
-}========== END OF FILE: pipelines/nozzle_pipeline4_208649d.json ==========
+}========== END OF FILE: pipelines/nozzle_pipeline4_b88efb2.json ==========
 
-========== START OF FILE: pipelines/pre_bernoulli_solver_pipeline_2cd3520.json ==========
+========== START OF FILE: pipelines/pre_bernoulli_solver_pipeline_c65186c.json ==========
 {
     "config": "config/pre_bernoulli_solver_config_4cbb37d.json",
     "setup_script": "setup_scripts/pre_bernoulli_solver_setup_78d7126.sh",
@@ -1266,12 +1266,12 @@ log "✅ Environment ready for execution."========== END OF FILE: setup_scripts/
             "version_tag": "model_4"
         }
     ]
-}========== END OF FILE: pipelines/pre_bernoulli_solver_pipeline_2cd3520.json ==========
+}========== END OF FILE: pipelines/pre_bernoulli_solver_pipeline_c65186c.json ==========
 
-========== START OF FILE: pipelines/nozzle_pipeline2_f4abd91.json ==========
+========== START OF FILE: pipelines/nozzle_pipeline2_b6a10b1.json ==========
 {
     "config": "config/nozzle_config2_4fd30b5.json",
-    "setup_script": "setup_scripts/mesh_generator_setup_89ec061.sh",
+    "setup_script": "setup_scripts/mesh_generator_setup_4b5bfe1.sh",
     "execution_chain": [
         {
             "order": 1,
@@ -1279,12 +1279,12 @@ log "✅ Environment ready for execution."========== END OF FILE: setup_scripts/
             "version_tag": "model_9"
         }
     ]
-}========== END OF FILE: pipelines/nozzle_pipeline2_f4abd91.json ==========
+}========== END OF FILE: pipelines/nozzle_pipeline2_b6a10b1.json ==========
 
-========== START OF FILE: pipelines/nozzle_pipeline7_525f5e5.json ==========
+========== START OF FILE: pipelines/nozzle_pipeline7_f0fcc99.json ==========
 {
     "config": "config/nozzle_config7_ce2e657.json",
-    "setup_script": "setup_scripts/mesh_generator_setup_89ec061.sh",
+    "setup_script": "setup_scripts/mesh_generator_setup_4b5bfe1.sh",
     "execution_chain": [
         {
             "order": 1,
@@ -1292,12 +1292,12 @@ log "✅ Environment ready for execution."========== END OF FILE: setup_scripts/
             "version_tag": "model_9"
         }
     ]
-}========== END OF FILE: pipelines/nozzle_pipeline7_525f5e5.json ==========
+}========== END OF FILE: pipelines/nozzle_pipeline7_f0fcc99.json ==========
 
-========== START OF FILE: pipelines/nozzle_pipeline6_6259e43.json ==========
+========== START OF FILE: pipelines/nozzle_pipeline6_44d246b.json ==========
 {
     "config": "config/nozzle_config6_b162ced.json",
-    "setup_script": "setup_scripts/mesh_generator_setup_89ec061.sh",
+    "setup_script": "setup_scripts/mesh_generator_setup_4b5bfe1.sh",
     "execution_chain": [
         {
             "order": 1,
@@ -1305,12 +1305,12 @@ log "✅ Environment ready for execution."========== END OF FILE: setup_scripts/
             "version_tag": "model_9"
         }
     ]
-}========== END OF FILE: pipelines/nozzle_pipeline6_6259e43.json ==========
+}========== END OF FILE: pipelines/nozzle_pipeline6_44d246b.json ==========
 
-========== START OF FILE: pipelines/mesh_pipeline_a416982.json ==========
+========== START OF FILE: pipelines/mesh_pipeline_fcb4f2e.json ==========
 {
     "config": "config/mesh_config_9663663.json",
-    "setup_script": "setup_scripts/mesh_generator_setup_89ec061.sh",
+    "setup_script": "setup_scripts/mesh_generator_setup_4b5bfe1.sh",
     "execution_chain": [
         {
             "order": 1,
@@ -1318,12 +1318,12 @@ log "✅ Environment ready for execution."========== END OF FILE: setup_scripts/
             "version_tag": "model_9"
         }
     ]
-}========== END OF FILE: pipelines/mesh_pipeline_a416982.json ==========
+}========== END OF FILE: pipelines/mesh_pipeline_fcb4f2e.json ==========
 
-========== START OF FILE: pipelines/nozzle_pipeline3_23c71e8.json ==========
+========== START OF FILE: pipelines/nozzle_pipeline3_9d8f0c1.json ==========
 {
     "config": "config/nozzle_config3_7b30d34.json",
-    "setup_script": "setup_scripts/mesh_generator_setup_89ec061.sh",
+    "setup_script": "setup_scripts/mesh_generator_setup_4b5bfe1.sh",
     "execution_chain": [
         {
             "order": 1,
@@ -1331,5 +1331,5 @@ log "✅ Environment ready for execution."========== END OF FILE: setup_scripts/
             "version_tag": "model_9"
         }
     ]
-}========== END OF FILE: pipelines/nozzle_pipeline3_23c71e8.json ==========
+}========== END OF FILE: pipelines/nozzle_pipeline3_9d8f0c1.json ==========
 
