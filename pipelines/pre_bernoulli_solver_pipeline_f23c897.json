@@ -1,6 +1,6 @@
 {
-  "config": "config/pre_bernoulli_solver_config_4cbb37d.json",
-  "setup_script": "setup_scripts/pre_bernoulli_solver_setup_fb3fcc6.sh",
+  "config": "config/pre_bernoulli_solver_config.json",
+  "setup_script": "setup_scripts/pre_bernoulli_solver_setup.sh",
   "execution_chain": [
     {
       "order": 1,
