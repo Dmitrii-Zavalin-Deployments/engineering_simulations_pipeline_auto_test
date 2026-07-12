@@ -1,7 +1,7 @@
 {
   "config": "config/pre_bernoulli_solver_config_4cbb37d.json",
   "setup_script": "setup_scripts/pre_bernoulli_solver_setup_ce58387.sh",
-  "input_output_folder": "data/testing-input-output",
+  "input_output_folder": "input-output",
   "execution_chain": [
     {
       "order": 1,
