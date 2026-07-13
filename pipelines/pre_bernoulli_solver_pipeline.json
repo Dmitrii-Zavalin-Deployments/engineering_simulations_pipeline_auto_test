@@ -13,7 +13,7 @@
     {
       "order": 2,
       "repository_url": "https://github.com/Dmitrii-Zavalin-Deployments/schema_merger_splitter.git",
-      "version_tag": "model_4",
+      "version_tag": "model_5",
       "input_file_name": "data_for_the_bernoulli_solver.json",
       "output_file_name": "pre_bernoulli_solver.json"
     }
