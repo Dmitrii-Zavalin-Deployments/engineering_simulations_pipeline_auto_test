@@ -39,7 +39,8 @@ python -m pip install --no-cache-dir \
     "matplotlib>=3.7.0" \
     "setuptools>=60.0.0" \
     "dropbox>=11.36.2" \
-    "gmsh>=4.13.1"
+    "gmsh>=4.13.1" \
+    "jsonpath-ng>=1.6.1"
 
 if [ $? -ne 0 ]; then
     log "❌ ERROR: Batch installation failed."
