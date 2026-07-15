@@ -13,10 +13,10 @@
     "z_max": ["no-slip"],
     "wall": ["no-slip"]
   },
-  "g": 9.80665,
-  "precision": 0.000001,
-  "k_v_min": 0.15,
-  "k_v_max": 0.25,
-  "k_p_min": 0.12,
-  "k_p_max": 0.18
+  "g": [9.80665],
+  "precision": [0.000001],
+  "k_v_min": [0.15],
+  "k_v_max": [0.25],
+  "k_p_min": [0.12],
+  "k_p_max": [0.18]
 }
