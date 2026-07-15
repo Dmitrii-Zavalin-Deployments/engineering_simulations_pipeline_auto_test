@@ -4,7 +4,7 @@
 • README.md
 • schema/pipeline_schema.json
 • LICENSE
-• setup_scripts/mesh_generator_setup_5b953f8.sh
+• setup_scripts/mesh_generator_setup_239561e.sh
 • setup_scripts/bernoulli_solver_setup_bbad31b.sh
 • setup_scripts/pre_bernoulli_solver_setup_9f7cc61.sh
 • configs/nozzle_config3_7b30d34.json
@@ -898,9 +898,9 @@ For more information on this, and how to apply and follow the GNU AGPL, see
 <https://www.gnu.org/licenses/>.
 ========== END OF FILE: LICENSE ==========
 
-========== START OF FILE: setup_scripts/mesh_generator_setup_5b953f8.sh ==========
+========== START OF FILE: setup_scripts/mesh_generator_setup_239561e.sh ==========
 #!/bin/bash
-# setup_scripts/mesh_generator_setup_5b953f8.sh
+# setup_scripts/mesh_generator_setup_239561e.sh
 
 # Turn off 'fail fast' for debugging installation flows
 set +e
@@ -959,7 +959,7 @@ install_pkg "dropbox>=11.36.2"
 # Force-install Python bindings to coordinate with Conda Gmsh binaries
 install_pkg "gmsh>=4.13.1"
 
-log "✅ Environment ready for execution."========== END OF FILE: setup_scripts/mesh_generator_setup_5b953f8.sh ==========
+log "✅ Environment ready for execution."========== END OF FILE: setup_scripts/mesh_generator_setup_239561e.sh ==========
 
 ========== START OF FILE: setup_scripts/bernoulli_solver_setup_bbad31b.sh ==========
 #!/bin/bash
