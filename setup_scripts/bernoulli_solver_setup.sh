@@ -32,15 +32,22 @@ python -m pip install --upgrade pip
 # because it allows Pip to resolve the full dependency tree in a single pass.
 log "📦 Installing Python dependencies in batch..."
 python -m pip install --no-cache-dir \
+    \
+    "# Foundation (Rule 9: Hybrid Memory)" \
     "numpy>=2.0.0" \
     "h5py>=3.12.0" \
+    \
+    "# Archivist I/O Layer (Rule 10: Cloud Sync)" \
     "requests>=2.32.0" \
+    \
+    "# Contract Enforcement" \
     "jsonschema>=4.23.0" \
+    "jsonpath-ng>=1.6.1" \
+    \
+    "# Support & Utilities" \
     "matplotlib>=3.7.0" \
     "setuptools>=60.0.0" \
-    "dropbox>=11.36.2" \
-    "gmsh>=4.13.1" \
-    "jsonpath-ng>=1.6.1"
+    "gmsh>=4.13.1"
 
 if [ $? -ne 0 ]; then
     log "❌ ERROR: Batch installation failed."
