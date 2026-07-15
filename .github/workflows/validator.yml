@@ -1,4 +1,4 @@
-name: Governance Validator
+name: 🗄️ Storage & Validation
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   validation_check:
-    name: "🧪 Pre-Flight: Schema & Range Governance"
+    name: "🗄️ Storage & Validation"
     runs-on: ubuntu-latest
     steps:
       - name: 🗂️ Checkout Repository
