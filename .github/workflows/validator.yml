@@ -35,12 +35,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest jsonschema
 
-      - name: 🧪 Run Governance Validation
+      - name: 🧪 Run Governance & Pipeline Sandbox Validation
         run: |
-          echo "🚀 Initiating: Governance Validation Suite"
+          echo "🚀 Initiating: Governance & Dynamic Sandbox Validation Suite"
           
           # Initialize metrics tracking logs
-          rm -f /tmp/cpu_track.log /tmp/memory_profile.log
+          rm -f /tmp/cpu_track.log /tmp/pytest_mem.log /tmp/mem_sandbox_*.log
           
           # Spawn high-frequency active background CPU load sampler
           while true; do
@@ -49,18 +49,93 @@ jobs:
           done &
           SAMPLER_PID=$!
           
-          # Execute validation test suite profiling maximum resident set memory size
-          /usr/bin/time -v pytest tests/test_governance_validation.py -vv -s --log-cli-level=INFO 2> /tmp/memory_profile.log
-          TEST_EXIT_CODE=$?
+          TEST_EXIT_CODE=0
+          
+          # =========================================================================
+          # PHASE 1: Run Pytest Governance Suite
+          # =========================================================================
+          echo "🧪 Running Pytest Governance Validation..."
+          /usr/bin/time -v pytest tests/test_governance_validation.py -vv -s --log-cli-level=INFO 2> /tmp/pytest_mem.log || TEST_EXIT_CODE=1
+          
+          # =========================================================================
+          # PHASE 2: Run Dynamic Pipeline Sandbox Validations
+          # =========================================================================
+          if [ $TEST_EXIT_CODE -eq 0 ]; then
+            echo "🔍 Discovering and Sandboxing Pipelines..."
+            PIPELINE_FILES=$(find pipelines -maxdepth 1 -name "*.json" 2>/dev/null || true)
+            
+            if [ -z "$PIPELINE_FILES" ]; then
+              echo "⚠️ No pipeline JSON files found in pipelines/"
+            else
+              for pipeline_file in $PIPELINE_FILES; do
+                echo "=================================================="
+                echo "🚀 Sandboxing Pipeline: $pipeline_file"
+                echo "=================================================="
+                
+                PIPELINE_BASE=$(basename "$pipeline_file" .json)
+                SANDBOX_DIR="/tmp/sandbox_$PIPELINE_BASE"
+                mkdir -p "$SANDBOX_DIR"
+                
+                # Parse Setup Script Path
+                SETUP_SCRIPT=$(jq -r '.setup_script' "$pipeline_file")
+                echo "  ↳ Setup Script: $SETUP_SCRIPT"
+                
+                if [ "$SETUP_SCRIPT" != "null" ] && [ -n "$SETUP_SCRIPT" ]; then
+                  if [ -f "$SETUP_SCRIPT" ]; then
+                    echo "  ▶ Executing setup script in sandbox..."
+                    cp "$SETUP_SCRIPT" "$SANDBOX_DIR/"
+                    SCRIPT_NAME=$(basename "$SETUP_SCRIPT")
+                    chmod +x "$SANDBOX_DIR/$SCRIPT_NAME"
+                    
+                    # Track resource footprint of setup execution
+                    /usr/bin/time -v bash -c "cd $SANDBOX_DIR && ./$SCRIPT_NAME" 2> "/tmp/mem_sandbox_${PIPELINE_BASE}_setup.log" || {
+                      echo "❌ ERROR: Setup script $SETUP_SCRIPT failed in sandbox!"
+                      TEST_EXIT_CODE=1
+                      break
+                    }
+                  else
+                    echo "❌ ERROR: Setup script file $SETUP_SCRIPT specified in $pipeline_file does not exist!"
+                    TEST_EXIT_CODE=1
+                    break
+                  fi
+                fi
+                
+                # Parse and Process Execution Chain
+                echo "  ▶ Resolving and Cloning Execution Chain..."
+                CHAIN_LEN=$(jq '.execution_chain | length' "$pipeline_file")
+                
+                for ((i=0; i<CHAIN_LEN; i++)); do
+                  REPO_URL=$(jq -r ".execution_chain[$i].repository_url" "$pipeline_file")
+                  VERSION_TAG=$(jq -r ".execution_chain[$i].version_tag" "$pipeline_file")
+                  REPO_NAME=$(basename "$REPO_URL" .git)
+                  
+                  echo "    - [$((i+1))/$CHAIN_LEN] Cloning $REPO_NAME ($VERSION_TAG) from $REPO_URL..."
+                  
+                  # Track resource footprint of git clone execution
+                  /usr/bin/time -v git clone --branch "$VERSION_TAG" --depth 1 "$REPO_URL" "$SANDBOX_DIR/modules/$REPO_NAME" 2> "/tmp/mem_sandbox_${PIPELINE_BASE}_clone_${i}.log" || {
+                    echo "❌ ERROR: Failed to clone $REPO_URL with tag $VERSION_TAG!"
+                    TEST_EXIT_CODE=1
+                    break 2
+                  }
+                done
+                
+                echo "✅ Sandbox for $pipeline_file verified successfully!"
+              done
+            fi
+          fi
           
           # Terminate background track sampler
           kill $SAMPLER_PID
           
-          # Extract absolute true peak compute values during validation runtime
+          # =========================================================================
+          # METRICS AGGREGATION
+          # =========================================================================
+          # Extract peak CPU load captured by sampler
           PEAK_CPU=$(sort -n /tmp/cpu_track.log | tail -n 1)
           if [ -z "$PEAK_CPU" ]; then PEAK_CPU="0.0"; fi
           
-          MAX_RSS_KB=$(grep "Maximum resident set size" /tmp/memory_profile.log | awk '{print $6}')
+          # Read all memory profile files collectively to find the true overall peak RSS memory
+          MAX_RSS_KB=$(cat /tmp/pytest_mem.log /tmp/mem_sandbox_*.log 2>/dev/null | grep "Maximum resident set size" | awk '{print $6}' | sort -n | tail -n 1)
           if [ -z "$MAX_RSS_KB" ]; then
             MAX_RSS_MB=$(free -m | awk '/Mem:/ { print $3 }')
           else
@@ -68,7 +143,7 @@ jobs:
           fi
           TOTAL_MEM_MB=$(free -m | awk '/Mem:/ { print $2 }')
           
-          # Bind extracted profile variables to pipeline environment block
+          # Bind metrics to environment variables
           echo "GOVERNANCE_ACTIVE_PEAK_CPU=${PEAK_CPU}%" >> $GITHUB_ENV
           echo "GOVERNANCE_ACTIVE_PEAK_MEM=${MAX_RSS_MB}/${TOTAL_MEM_MB}MB" >> $GITHUB_ENV
           
