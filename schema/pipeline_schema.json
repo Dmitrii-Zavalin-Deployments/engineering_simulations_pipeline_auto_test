@@ -6,9 +6,14 @@
     "config",
     "setup_script",
     "modules_input_output_folder",
-    "execution_chain"
+    "execution_chain",
+    "description"
   ],
   "properties": {
+    "description": {
+      "type": "string",
+      "description": "A brief summary of the pipeline's purpose and expected outcome."
+    },
     "config": {
       "type": "string",
       "description": "Path to the unified configuration file."
