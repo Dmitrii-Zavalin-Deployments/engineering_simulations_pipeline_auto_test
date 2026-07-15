@@ -180,10 +180,14 @@ jobs:
           MEM_USAGE="${GOVERNANCE_ACTIVE_PEAK_MEM:-$(free -m | awk '/Mem:/ { print $3 "/" $2 "MB" }')}"
 
           # New log entry
+          # Construct the URL for the current run
+          RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+
           NEW_ENTRY=$(cat <<EOF
           ### Audit: $RUN_DATE
           - **Branch:** \`$CURRENT_BRANCH\`
           - **Status:** $STATUS
+          - **Run:** [Detailed Execution Logs]($RUN_URL)
           - **CPU Load:** $CPU_LOAD
           - **Memory Usage:** $MEM_USAGE
           ---
