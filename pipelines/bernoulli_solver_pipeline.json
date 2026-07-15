@@ -1,6 +1,6 @@
 {
-  "config": "config/pre_bernoulli_solver_config_4cbb37d.json",
-  "setup_script": "setup_scripts/pre_bernoulli_solver_setup_9f7cc61.sh",
+  "config": "config/bernoulli_solver_config.json",
+  "setup_script": "setup_scripts/bernoulli_solver_setup.sh",
   "modules_input_output_folder": "input-output",
   "execution_chain": [
     {
