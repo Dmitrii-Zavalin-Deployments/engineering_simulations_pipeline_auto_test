@@ -4,8 +4,8 @@
 • README.md
 • schema/pipeline_schema.json
 • LICENSE
-• setup_scripts/mesh_generator_setup_239561e.sh
-• setup_scripts/bernoulli_solver_setup_bbad31b.sh
+• setup_scripts/mesh_generator_setup_1e32613.sh
+• setup_scripts/bernoulli_solver_setup_b03651f.sh
 • setup_scripts/pre_bernoulli_solver_setup_9f7cc61.sh
 • configs/nozzle_config3_7b30d34.json
 • configs/nozzle_config5_9663663.json
@@ -898,9 +898,9 @@ For more information on this, and how to apply and follow the GNU AGPL, see
 <https://www.gnu.org/licenses/>.
 ========== END OF FILE: LICENSE ==========
 
-========== START OF FILE: setup_scripts/mesh_generator_setup_239561e.sh ==========
+========== START OF FILE: setup_scripts/mesh_generator_setup_1e32613.sh ==========
 #!/bin/bash
-# setup_scripts/mesh_generator_setup_239561e.sh
+# setup_scripts/mesh_generator_setup_1e32613.sh
 
 # Turn off 'fail fast' for debugging installation flows
 set +e
@@ -959,9 +959,9 @@ install_pkg "dropbox>=11.36.2"
 # Force-install Python bindings to coordinate with Conda Gmsh binaries
 install_pkg "gmsh>=4.13.1"
 
-log "✅ Environment ready for execution."========== END OF FILE: setup_scripts/mesh_generator_setup_239561e.sh ==========
+log "✅ Environment ready for execution."========== END OF FILE: setup_scripts/mesh_generator_setup_1e32613.sh ==========
 
-========== START OF FILE: setup_scripts/bernoulli_solver_setup_bbad31b.sh ==========
+========== START OF FILE: setup_scripts/bernoulli_solver_setup_b03651f.sh ==========
 #!/bin/bash
 
 # Keep 'set +e' to handle errors manually
@@ -1021,7 +1021,7 @@ if [ $? -ne 0 ]; then
 fi
 
 log "✅ All dependencies installed successfully."
-log "✅ Environment ready for execution."========== END OF FILE: setup_scripts/bernoulli_solver_setup_bbad31b.sh ==========
+log "✅ Environment ready for execution."========== END OF FILE: setup_scripts/bernoulli_solver_setup_b03651f.sh ==========
 
 ========== START OF FILE: setup_scripts/pre_bernoulli_solver_setup_9f7cc61.sh ==========
 #!/bin/bash
@@ -1285,7 +1285,7 @@ log "✅ Environment ready for execution."========== END OF FILE: setup_scripts/
 ========== START OF FILE: pipelines/bernoulli_solver_pipeline_e23d504.json ==========
 {
   "config": "config/bernoulli_solver_config_3fd719a.json",
-  "setup_script": "setup_scripts/bernoulli_solver_setup_bbad31b.sh",
+  "setup_script": "setup_scripts/bernoulli_solver_setup_b03651f.sh",
   "modules_input_output_folder": "input-output",
   "execution_chain": [
     {
