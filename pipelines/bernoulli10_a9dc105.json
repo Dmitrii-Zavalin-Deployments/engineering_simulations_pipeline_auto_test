@@ -21,7 +21,7 @@
     {
       "order": 3,
       "repository_url": "https://github.com/Dmitrii-Zavalin-Deployments/bernoulli_solver.git",
-      "version_tag": "model_6",
+      "version_tag": "model_7",
       "input_file_name": "bernoulli_solver_input.json",
       "output_file_name": "bernoulli_solver_output.json"
     }
