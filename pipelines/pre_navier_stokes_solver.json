@@ -1,7 +1,7 @@
 {
   "description": "Executes the fluid dynamics simulation workflow by generating a computational mesh, restructuring simulation data, and running the Bernoulli solver engine.",
-  "config": "configs/bernoulli_solver_config10_d74b846.json",
-  "setup_script": "setup_scripts/bernoulli_solver_setup_b03651f.sh",
+  "config": "configs/pre_navier_stokes_config.json",
+  "setup_script": "setup_scripts/pre_navier_stokes_solver_setup.sh",
   "modules_input_output_folder": "input-output",
   "execution_chain": [
     {
@@ -21,7 +21,7 @@
     {
       "order": 3,
       "repository_url": "https://github.com/Dmitrii-Zavalin-Deployments/bernoulli_solver.git",
-      "version_tag": "model_7",
+      "version_tag": "model_8",
       "input_file_name": "bernoulli_solver_input.json",
       "output_file_name": "bernoulli_solver_output.json"
     },
