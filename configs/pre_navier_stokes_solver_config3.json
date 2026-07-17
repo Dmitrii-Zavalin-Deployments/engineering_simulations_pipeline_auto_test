@@ -1,0 +1,22 @@
+{
+  "engine_type": ["gmsh"],
+  "solver_version": ["1.0.0"],
+  "tolerance": [1],
+  "max_element_size": [100],
+  "min_element_size": [1, 5, 10, 15, 20, 25, 30, 35, 38],
+  "boundary_map": {
+    "x_min": ["inflow"],
+    "x_max": ["outflow"],
+    "y_min": ["no-slip"],
+    "y_max": ["no-slip"],
+    "z_min": ["no-slip"],
+    "z_max": ["no-slip"],
+    "wall": ["no-slip"]
+  },
+  "g": [9.80665],
+  "precision": [0.000001],
+  "k_v_min": [0.25],
+  "k_v_max": [0.25],
+  "k_p_min": [0.25],
+  "k_p_max": [0.25]
+}
