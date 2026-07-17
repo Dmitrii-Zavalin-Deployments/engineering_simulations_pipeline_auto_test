@@ -1,6 +1,6 @@
 {
   "description": "Executes the fluid dynamics simulation workflow by generating a computational mesh, restructuring simulation data, and running the Bernoulli solver engine.",
-  "config": "configs/pre_navier_stokes_solver_config_d74b846.json",
+  "config": "configs/pre_navier_stokes_solver_config10.json",
   "setup_script": "setup_scripts/pre_navier_stokes_solver_setup_b03651f.sh",
   "modules_input_output_folder": "input-output",
   "execution_chain": [
@@ -8,7 +8,7 @@
       "order": 1,
       "repository_url": "https://github.com/Dmitrii-Zavalin-Deployments/mesh_generator.git",
       "version_tag": "model_13",
-      "input_file_name": "test.step",
+      "input_file_name": "nozzle.step",
       "output_file_name": "mesh_generator_output.json"
     },
     {

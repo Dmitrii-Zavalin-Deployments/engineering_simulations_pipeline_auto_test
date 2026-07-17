@@ -1,6 +1,6 @@
 {
   "description": "Executes the fluid dynamics simulation workflow by generating a computational mesh, restructuring simulation data, and running the Bernoulli solver engine.",
-  "config": "configs/pre_navier_stokes_solver_config7.json",
+  "config": "configs/pre_navier_stokes_solver_config9.json",
   "setup_script": "setup_scripts/pre_navier_stokes_solver_setup_b03651f.sh",
   "modules_input_output_folder": "input-output",
   "execution_chain": [
