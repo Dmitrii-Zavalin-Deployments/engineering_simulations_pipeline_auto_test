@@ -108,15 +108,21 @@ jobs:
                   REPO_URL=$(jq -r ".execution_chain[$i].repository_url" "$pipeline_file")
                   VERSION_TAG=$(jq -r ".execution_chain[$i].version_tag" "$pipeline_file")
                   REPO_NAME=$(basename "$REPO_URL" .git)
+                  TARGET_PATH="$SANDBOX_DIR/modules/$REPO_NAME"
                   
-                  echo "    - [$((i+1))/$CHAIN_LEN] Cloning $REPO_NAME ($VERSION_TAG) from $REPO_URL..."
-                  
-                  # Track resource footprint of git clone execution
-                  /usr/bin/time -v git clone --branch "$VERSION_TAG" --depth 1 "$REPO_URL" "$SANDBOX_DIR/modules/$REPO_NAME" 2> "/tmp/mem_sandbox_${PIPELINE_BASE}_clone_${i}.log" || {
-                    echo "❌ ERROR: Failed to clone $REPO_URL with tag $VERSION_TAG!"
-                    TEST_EXIT_CODE=1
-                    break 2
-                  }
+                  # IDEMPOTENT CLONING LOGIC: Skip if directory exists
+                  if [ -d "$TARGET_PATH" ]; then
+                    echo "    - [$((i+1))/$CHAIN_LEN] Skipping $REPO_NAME; directory already exists at $TARGET_PATH."
+                  else
+                    echo "    - [$((i+1))/$CHAIN_LEN] Cloning $REPO_NAME ($VERSION_TAG) from $REPO_URL..."
+                    
+                    # Track resource footprint of git clone execution
+                    /usr/bin/time -v git clone --branch "$VERSION_TAG" --depth 1 "$REPO_URL" "$TARGET_PATH" 2> "/tmp/mem_sandbox_${PIPELINE_BASE}_clone_${i}.log" || {
+                      echo "❌ ERROR: Failed to clone $REPO_URL with tag $VERSION_TAG!"
+                      TEST_EXIT_CODE=1
+                      break 2
+                    }
+                  fi
                 done
                 
                 echo "✅ Sandbox for $pipeline_file verified successfully!"
