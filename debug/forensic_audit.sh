@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# FORENSIC AUDIT: CONFIGURATION MIGRATION COLLISION DIAGNOSTIC
+# FORENSIC AUDIT: CONFIGURATION MIGRATION COLLISION DIAGNOSTIC (FIXED PATHS)
 # ==============================================================================
 set -euo pipefail
 
@@ -8,16 +8,21 @@ echo "========================================================================="
 echo "📊 STEP 1: TARGET ENVIRONMENT & DIRECTORY INVENTORY"
 echo "========================================================================="
 echo "Checking contents of pipelines/ directory:"
-ls -la pipelines/ || echo "⚠️ pipelines/ directory not found at root"
+ls -la pipelines/
+
+echo -e "\nChecking contents of configs/ directory:"
+ls -la configs/
 
 echo -e "\nChecking Git tracking status for target pipeline files:"
-git ls-files | grep "main_branch_pipeline" || echo "⚠️ No pipeline files tracked in Git index."
+git ls-files pipelines/ || echo "⚠️ No pipeline files tracked in Git index."
 
 echo "========================================================================="
 echo "🔍 STEP 2: LOCATING SMOKING-GUN MIGRATION CODE"
 echo "========================================================================="
-# Dynamically locate the script printing the execution signatures
-TARGET_SCRIPT=$(grep -rlE "is already versioned correctly|Renaming" src/ scripts/ tools/ .github/ 2>/dev/null | head -n 1)
+# Search actual project directories and safely manage grep exit codes
+set +e
+TARGET_SCRIPT=$(grep -rlE "is already versioned correctly|Renaming" setup_scripts/ tests/ 2>/dev/null | head -n 1)
+set -e
 
 if [ -z "${TARGET_SCRIPT}" ]; then
     echo "❌ CRITICAL: Could not locate the source script executing the file renames."
@@ -42,7 +47,7 @@ echo ""
 # SED REPAIR INJECTIONS (PROPOSED HOOKS)
 # ------------------------------------------------------------------------------
 
-# OPTION A: If the target script is a Bash script using 'git mv', force overwrite:
+# OPTION A: If the target script is a Bash script using 'git mv', force overwrite (-f):
 # # sed -i 's/git mv/git mv -f/g' "${TARGET_SCRIPT}"
 
 # OPTION B: If it is a Python script using subprocess for 'git mv', inject the force flag:
@@ -51,7 +56,7 @@ echo ""
 # OPTION C: If it uses native OS 'mv', force overwrite:
 # # sed -i 's/mv /mv -f /g' "${TARGET_SCRIPT}"
 
-# OPTION D: If you need to skip the operation entirely when the destination file exists:
-# # sed -i '/Renaming/i if [ -f "$destination" ]; then echo "⚠️ Collision detected, skipping."; continue; fi' "${TARGET_SCRIPT}"
+# OPTION D: Force clean the conflicting destination files directly in the tracking index before renaming:
+# # sed -i '/Renaming/i git rm -f "$destination" 2>/dev/null || true' "${TARGET_SCRIPT}"
 
 echo "Audit completed successfully."
