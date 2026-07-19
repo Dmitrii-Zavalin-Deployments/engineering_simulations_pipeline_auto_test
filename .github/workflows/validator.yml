@@ -171,6 +171,49 @@ jobs:
           # Target directories
           DIRS=("configs" "pipelines" "setup_scripts")
           
+          # =========================================================================
+          # 🛑 PRE-FLIGHT DEDUPLICATION CHECK
+          # =========================================================================
+          echo "🔎 Running Pre-Flight Deduplication Check..."
+          declare -A TARGET_MAP
+          HAS_COLLISION=0
+          
+          for dir in "${DIRS[@]}"; do
+            if [ -d "$dir" ]; then
+              for file in "$dir"/*; do
+                if [ -f "$file" ]; then
+                  CONTENT_HASH=$(git hash-object "$file" | cut -c1-7)
+                  ext="${file##*.}"
+                  filename=$(basename "$file")
+                  base="${filename%.*}"
+                  new_base=$(echo "$base" | sed -E 's/_[a-f0-9]+$//')
+                  new_filename="${new_base}_${CONTENT_HASH}.${ext}"
+                  target_path="$dir/$new_filename"
+                  
+                  # Verify if this normalized destination path has already been claimed
+                  if [ -n "${TARGET_MAP[$target_path]+xyz}" ]; then
+                    echo "❌ CRITICAL HIT: Duplicate Asset Namespace Collision!"
+                    echo "   Multiple tracking targets resolve to the identical path: $target_path"
+                    echo "   - Entity Conflicting [A]: ${TARGET_MAP[$target_path]}"
+                    echo "   - Entity Conflicting [B]: $file"
+                    HAS_COLLISION=1
+                  else
+                    TARGET_MAP[$target_path]="$file"
+                  fi
+                fi
+              done
+            fi
+          done
+          
+          if [ $HAS_COLLISION -ne 0 ]; then
+            echo "❌ Terminating Workflow: Deduplication validations failed. Clean up matching redundant payloads."
+            exit 1
+          fi
+          echo "✅ Pre-flight validation clear. Initiating migration sequence..."
+          
+          # =========================================================================
+          # 🔄 MIGRATION & REFERENCE SWEEP PIPELINE
+          # =========================================================================
           for dir in "${DIRS[@]}"; do
             if [ -d "$dir" ]; then
               for file in "$dir"/*; do
