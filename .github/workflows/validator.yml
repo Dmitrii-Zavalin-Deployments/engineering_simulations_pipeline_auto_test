@@ -171,6 +171,10 @@ jobs:
           # Target directories
           DIRS=("configs" "pipelines" "setup_scripts")
           
+          # Clean up any transient Python cache directories before tracking logic runs
+          echo "🧹 Purging transient __pycache__ directories..."
+          find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+          
           # =========================================================================
           # 🛑 PRE-FLIGHT DEDUPLICATION CHECK
           # =========================================================================
@@ -277,13 +281,15 @@ jobs:
             fi
           done
           
-          # Commit the changes if there are any
-          if [ -n "$(git status --porcelain)" ]; then
+          # =========================================================================
+          # 🚀 SAFE COMMIT EXECUTION (-uno filters out untracked changes)
+          # =========================================================================
+          if [ -n "$(git status -uno --porcelain)" ]; then
             git commit -m "🤖 robot: version-lock governance assets [skip ci]"
             git push origin HEAD
-            echo "🚀 Version lock pushed to repository."
+            echo "🚀 Version lock successfully pushed to repository branch."
           else
-            echo "✅ All files are already perfectly version-locked."
+            echo "✅ All tracked files are already perfectly version-locked. No new changes detected to commit."
           fi
 
       - name: 🔍 Forensic Audit
