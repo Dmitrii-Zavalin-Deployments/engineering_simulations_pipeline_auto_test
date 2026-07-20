@@ -8,7 +8,7 @@
       "order": 1,
       "repository_url": "https://github.com/Dmitrii-Zavalin-Deployments/mesh_generator.git",
       "version_tag": "prototype_1",
-      "input_file_name": "test.step",
+      "input_file_name": "nozzle.step",
       "output_file_name": "mesh_generator_output.json"
     },
     {
