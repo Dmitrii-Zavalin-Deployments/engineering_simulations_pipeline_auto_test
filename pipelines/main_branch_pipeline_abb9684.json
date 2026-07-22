@@ -14,7 +14,7 @@
     {
       "order": 2,
       "repository_url": "https://github.com/Dmitrii-Zavalin-Deployments/schema_merger_splitter.git",
-      "version_tag": "model_6",
+      "version_tag": "prototype_1",
       "input_file_name": "data_for_the_bernoulli_solver.json",
       "output_file_name": "bernoulli_solver_input.json"
     },
@@ -28,7 +28,7 @@
     {
       "order": 4,
       "repository_url": "https://github.com/Dmitrii-Zavalin-Deployments/schema_merger_splitter.git",
-      "version_tag": "model_6",
+      "version_tag": "prototype_1",
       "input_file_name": "data_for_the_navier_stokes_solver.json",
       "output_file_name": "navier_stokes_solver_input.json"
     }
