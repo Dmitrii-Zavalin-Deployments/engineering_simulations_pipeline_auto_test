@@ -355,23 +355,30 @@ jobs:
           EOF
           )
 
-          HEADER="# 🌊 Fluid Dynamics Library for the Simulators Aggregator: Performance Audit"
-          TUTORIAL="### 📚 Resources & Documentation
+          HEADER=$(cat <<EOF
+          # 🌊 Fluid Dynamics Library for the Simulators Aggregator
+
+          Creates, validates, and stores the simulators tuning packages containing the execution pipeline, the configuration scenarios, and the instance-preparing installation script.
+
+          ### 📚 Resources & Documentation
           - **Tutorial/Book:** ***currently in development***
-          ---"
+
+          ---
+
+          ### 🧮 Performance Audit
+          EOF
+          )
 
           if [ -f "README.md" ]; then
-              # Extract everything after the first horizontal rule to preserve the body
-              sed '1,/---/d' README.md > old_body.tmp
+              # Extract everything after the first audit entry to preserve historical runs
+              sed -n '/### Audit:/,$p' README.md > old_body.tmp
               echo "$HEADER" > README.md
-              echo "$TUTORIAL" >> README.md
               echo "$NEW_ENTRY" >> README.md
               cat old_body.tmp >> README.md
               rm old_body.tmp
           else
               # Initialize new README
               echo "$HEADER" > README.md
-              echo "$TUTORIAL" >> README.md
               echo "$NEW_ENTRY" >> README.md
           fi
 
@@ -381,13 +388,13 @@ jobs:
             git commit -m "🤖 robot: audit ledger update [${{ job.status }}] [skip ci]"
             TARGET_COMMIT=$(git rev-parse HEAD)
 
-            # 1 Fetch remote notes
+            # Fetch remote notes
             git fetch origin refs/notes/commits:refs/notes/commits || true
 
-            # 2 Add note locally
+            # Attach Git note locally
             git notes add -f -m "robot: true" "$TARGET_COMMIT"
 
-            # 3 Push commit and notes
+            # Push commit and notes
             git pull origin HEAD --rebase || echo "Rebase failed, pushing without rebase."
             git push origin HEAD
             git push --force origin refs/notes/commits || true
