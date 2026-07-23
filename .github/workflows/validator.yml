@@ -356,7 +356,7 @@ jobs:
           )
 
           HEADER=$(cat <<EOF
-          # 🌊 Fluid Dynamics Library for the Simulators Aggregator
+          # 🌊 Fluid Dynamics Simulators Library
 
           Creates, validates, and stores the simulators tuning packages containing the execution pipeline, the configuration scenarios, and the instance-preparing installation script.
 
