@@ -351,7 +351,6 @@ jobs:
           - **Run:** [Detailed Execution Logs]($RUN_URL)
           - **CPU Load:** \`$CPU_LOAD\`
           - **Memory Usage:** \`$MEM_USAGE\`
-          ---
           EOF
           )
 
