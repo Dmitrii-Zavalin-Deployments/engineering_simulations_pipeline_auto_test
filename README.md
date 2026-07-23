@@ -1,6 +1,19 @@
-# 🌊 Fluid Dynamics Library for the Simulators Aggregator: Performance Audit
+# 🌊 Fluid Dynamics Library for the Simulators Aggregator
+
+Creates, validates, and stores the simulators tuning packages containing the execution pipeline, the configuration scenarios, and the instance-preparing installation script.
+
 ### 📚 Resources & Documentation
 - **Tutorial/Book:** ***currently in development***
+
+---
+
+### 🧮 Performance Audit
+### Audit: 2026-07-23 12:37:19 UTC
+- **Branch:** `main`
+- **Status:** `success`
+- **Run:** [Detailed Execution Logs](https://github.com/Dmitrii-Zavalin-Deployments/fluid_dynamics_simulator/actions/runs/30007518445)
+- **CPU Load:** `54.7%`
+- **Memory Usage:** `1535/15989MB`
 ---
 ### Audit: 2026-07-22 19:49:44 UTC
 - **Branch:** `main`
