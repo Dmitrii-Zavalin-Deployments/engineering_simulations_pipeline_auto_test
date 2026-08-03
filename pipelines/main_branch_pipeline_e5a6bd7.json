@@ -1,6 +1,6 @@
 {
   "description": "Executes the fluid dynamics simulation workflow by generating a computational mesh, restructuring simulation data, and running the Bernoulli solver engine.",
-  "config": "configs/main_branch_config_0d534a9.json",
+  "config": "configs/main_branch_config_18f8928.json",
   "setup_script": "setup_scripts/main_branch_solver_setup_dff62e7.sh",
   "modules_input_output_folder": "input-output",
   "execution_chain": [
