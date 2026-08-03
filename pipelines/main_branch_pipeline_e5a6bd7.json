@@ -19,21 +19,21 @@
       "output_file_name": "cfd_compiler_output.json"
     },
     {
-      "order": 2,
+      "order": 3,
       "repository_url": "https://github.com/Dmitrii-Zavalin-Deployments/schema_merger_splitter.git",
       "version_tag": "prototype_4",
       "input_file_name": "data_for_the_bernoulli_solver.json",
       "output_file_name": "bernoulli_solver_input.json"
     },
     {
-      "order": 3,
+      "order": 4,
       "repository_url": "https://github.com/Dmitrii-Zavalin-Deployments/bernoulli_solver.git",
       "version_tag": "prototype_4",
       "input_file_name": "bernoulli_solver_input.json",
       "output_file_name": "bernoulli_solver_output.json"
     },
     {
-      "order": 4,
+      "order": 5,
       "repository_url": "https://github.com/Dmitrii-Zavalin-Deployments/schema_merger_splitter.git",
       "version_tag": "prototype_4",
       "input_file_name": "data_for_the_navier_stokes_solver.json",
