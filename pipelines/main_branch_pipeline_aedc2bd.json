@@ -7,28 +7,35 @@
     {
       "order": 1,
       "repository_url": "https://github.com/Dmitrii-Zavalin-Deployments/mesh_generator.git",
-      "version_tag": "prototype_4",
+      "version_tag": "prototype_6",
       "input_file_name": "navier_stokes_test.step",
       "output_file_name": "mesh_generator_output.json"
     },
     {
       "order": 2,
+      "repository_url": "https://github.com/Dmitrii-Zavalin-Deployments/cfd_compiler.git",
+      "version_tag": "prototype_3",
+      "input_file_name": "navier_stokes_test.step",
+      "output_file_name": "cfd_compiler_output.json"
+    },
+    {
+      "order": 2,
       "repository_url": "https://github.com/Dmitrii-Zavalin-Deployments/schema_merger_splitter.git",
-      "version_tag": "prototype_2",
+      "version_tag": "prototype_4",
       "input_file_name": "data_for_the_bernoulli_solver.json",
       "output_file_name": "bernoulli_solver_input.json"
     },
     {
       "order": 3,
       "repository_url": "https://github.com/Dmitrii-Zavalin-Deployments/bernoulli_solver.git",
-      "version_tag": "prototype_2",
+      "version_tag": "prototype_4",
       "input_file_name": "bernoulli_solver_input.json",
       "output_file_name": "bernoulli_solver_output.json"
     },
     {
       "order": 4,
       "repository_url": "https://github.com/Dmitrii-Zavalin-Deployments/schema_merger_splitter.git",
-      "version_tag": "prototype_2",
+      "version_tag": "prototype_4",
       "input_file_name": "data_for_the_navier_stokes_solver.json",
       "output_file_name": "navier_stokes_solver_input.json"
     }

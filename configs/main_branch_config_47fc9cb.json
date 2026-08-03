@@ -1,22 +1,185 @@
 {
-  "engine_type": ["gmsh"],
-  "solver_version": ["1.0.0"],
-  "tolerance": [0.1],
-  "max_element_size": [1],
-  "min_element_size": [0.5],
-  "boundary_map": {
-    "x_min": ["inflow"],
-    "x_max": ["outflow"],
-    "y_min": ["no-slip"],
-    "y_max": ["no-slip"],
-    "z_min": ["no-slip"],
-    "z_max": ["no-slip"],
-    "wall": ["no-slip"]
-  },
-  "g": [9.80665],
-  "precision": [0.000001],
-  "k_v_min": [0.25],
-  "k_v_max": [0.25],
-  "k_p_min": [0.25],
-  "k_p_max": [0.25]
+  "tolerance": [
+    0.1
+  ],
+  "max_element_size": [
+    1
+  ],
+  "min_element_size": [
+    0.5
+  ],
+  "boundary_condition_mapping": [
+    {
+      "location": [
+        "x_min"
+      ],
+      "type": [
+        "inflow"
+      ],
+      "values": {
+        "u": [
+          2.5
+        ],
+        "v": [
+          0.0
+        ],
+        "w": [
+          0.0
+        ],
+        "p": [
+          101325.0
+        ]
+      }
+    },
+    {
+      "location": [
+        "x_max"
+      ],
+      "type": [
+        "outflow"
+      ],
+      "values": {
+        "u": [
+          0.0
+        ],
+        "v": [
+          0.0
+        ],
+        "w": [
+          0.0
+        ],
+        "p": [
+          100000.0
+        ]
+      }
+    },
+    {
+      "location": [
+        "wall"
+      ],
+      "type": [
+        "no-slip"
+      ],
+      "values": {
+        "u": [
+          0.0
+        ],
+        "v": [
+          0.0
+        ],
+        "w": [
+          0.0
+        ],
+        "p": [
+          0.0
+        ]
+      }
+    },
+    {
+      "location": [
+        "y_min"
+      ],
+      "type": [
+        "free-slip"
+      ],
+      "values": {
+        "u": [
+          2.5
+        ],
+        "v": [
+          0.0
+        ],
+        "w": [
+          0.0
+        ],
+        "p": [
+          0.0
+        ]
+      }
+    },
+    {
+      "location": [
+        "y_max"
+      ],
+      "type": [
+        "free-slip"
+      ],
+      "values": {
+        "u": [
+          2.5
+        ],
+        "v": [
+          0.0
+        ],
+        "w": [
+          0.0
+        ],
+        "p": [
+          0.0
+        ]
+      }
+    },
+    {
+      "location": [
+        "z_min"
+      ],
+      "type": [
+        "free-slip"
+      ],
+      "values": {
+        "u": [
+          2.5
+        ],
+        "v": [
+          0.0
+        ],
+        "w": [
+          0.0
+        ],
+        "p": [
+          0.0
+        ]
+      }
+    },
+    {
+      "location": [
+        "z_max"
+      ],
+      "type": [
+        "free-slip"
+      ],
+      "values": {
+        "u": [
+          2.5
+        ],
+        "v": [
+          0.0
+        ],
+        "w": [
+          0.0
+        ],
+        "p": [
+          0.0
+        ]
+      }
+    }
+  ],
+  "g": [
+    9.80665
+  ],
+  "precision": [
+    0.000001
+  ],
+  "k_v_min": [
+    0.25
+  ],
+  "k_v_max": [
+    0.25
+  ],
+  "k_p_min": [
+    0.25
+  ],
+  "k_p_max": [
+    0.25
+  ]
 }
