@@ -16,7 +16,7 @@ pip list | head -n 5
 # 1. Conda Installation 
 # Note: Ensure 'conda-solver: libmamba' is set in your Actions YAML for maximum speed
 log "📦 Installing base binary layers via Conda..."
-conda install -y -c conda-forge pythonocc-core gmsh numpy pip
+conda install -y -c conda-forge pythonocc-core gmsh numpy pip matplotlib
 if [ $? -ne 0 ]; then 
     log "❌ ERROR: Conda install failed."
     exit 1
